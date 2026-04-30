@@ -18,13 +18,13 @@ Unlike Plan M (intraday momentum anomalies), Plan A operates on larger timeframe
 
 | File | Description | Status |
 |------|-------------|--------|
-| `indicators/ovtlier_plan_a.pine` | Main Plan A swing signal indicator | ✅ Active (v2) |
+| `indicators/ovtlier_plan_a.pine` | Main Plan A swing signal indicator | ✅ Active (v3) |
 
 ---
 
 ## Plan A — Core Conditions
 
-The indicator evaluates **5 conditions**, one mandatory and four scored:
+The indicator evaluates **6 conditions**: one fixed mandatory gate, one optional mandatory gate, and four/five scored conditions.
 
 | # | Condition | Type | Logic |
 |---|-----------|------|-------|
@@ -33,11 +33,25 @@ The indicator evaluates **5 conditions**, one mandatory and four scored:
 | C3 | Relative Weakness (RSI) | Scored | RSI(14) < 40 **or** RSI(2) < 10 |
 | C4 | Relative Volume (RVOL) | Scored | Volume > 1.5× average |
 | C5 | Reversal Candle (Hammer) | Scored | Lower wick ≥ 2× body |
+| C6 | Asset Trend Filter | Scored / Optional* | Close > SMA(50), Close > SMA(200), SMA(50) > SMA(200) |
 
-**Signal levels:**
-- 🟢 **READY** — C1 pass + 3 or 4 of C2–C5
-- 🟡 **WATCH** — C1 pass + exactly 2 of C2–C5
-- 🔴 **NOT READY** — C1 fail or score < 2
+*C6 can be toggled to mandatory via the `C6 obligatoria` input. Default: scored (0 or 1 point).
+
+**Signal levels (0–5 scoring system):**
+- 🟢 **READY** — C1 pass + 4 or 5 of C2–C6
+- 🟡 **WATCH** — C1 pass + exactly 3 of C2–C6
+- 🔴 **NOT READY** — C1 fail or score < 3
+
+---
+
+## On-Chart Table — Columns (v3)
+
+| Column | Content |
+|--------|---------|
+| CONDITION | Code and name (C1–C6) |
+| DESCRIPTION | Summarised check logic |
+| VALUE | **Live numeric reading** (RSI, RVOL ratio, SMA distance %, etc.) |
+| STATUS | PASS / FAIL badge |
 
 ---
 
@@ -55,16 +69,15 @@ ovtlier-plan-a-system/
 └── LICENSE
 ```
 
-Version history is tracked entirely through Git commits and tags — no archive folder needed.
-
 ---
 
 ## How to Use
 
 1. Open TradingView → Pine Editor → paste the content of `indicators/ovtlier_plan_a.pine`
 2. Add to chart on a **Daily or Weekly** timeframe
-3. Read the on-chart table (top-right by default, configurable)
+3. Read the on-chart table (position configurable from inputs)
 4. Only trade READY signals — never force a trade when C1 (regime) fails
+5. Check C6: if the asset trades below SMA 50/200, the signal is lower quality
 
 ---
 
@@ -74,7 +87,7 @@ Every signal includes a suggested **Stop Loss** calculated as:
 ```
 SL = Bar Low − (ATR(14) × multiplier)
 ```
-Default multiplier: **1.5×**. Adjustable in indicator inputs.
+Default multiplier: **1.5×**. The table shows both the absolute level and the percentage distance from the current close.
 
 > ⚠️ This indicator is an educational tool. It does not constitute financial advice. Always apply your own risk management rules before entering any position.
 

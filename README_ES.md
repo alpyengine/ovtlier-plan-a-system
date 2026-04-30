@@ -18,13 +18,13 @@ A diferencia del Plan M (anomalías de momentum intradiario), el Plan A opera en
 
 | Archivo | Descripción | Estado |
 |---------|-------------|--------|
-| `indicators/ovtlier_plan_a.pine` | Indicador principal de señales Plan A | ✅ Activo (v2) |
+| `indicators/ovtlier_plan_a.pine` | Indicador principal de señales Plan A | ✅ Activo (v3) |
 
 ---
 
 ## Plan A — Condiciones Principales
 
-El indicador evalúa **5 condiciones**, una obligatoria y cuatro con puntuación:
+El indicador evalúa **6 condiciones**: una obligatoria fija, una obligatoria opcional y cuatro/cinco con puntuación.
 
 | # | Condición | Tipo | Lógica |
 |---|-----------|------|--------|
@@ -33,11 +33,25 @@ El indicador evalúa **5 condiciones**, una obligatoria y cuatro con puntuación
 | C3 | Debilidad Relativa (RSI) | Puntuada | RSI(14) < 40 **o** RSI(2) < 10 |
 | C4 | Volumen Relativo (RVOL) | Puntuada | Volumen > 1.5× media |
 | C5 | Vela de Reversión (Hammer) | Puntuada | Mecha inferior ≥ 2× cuerpo |
+| C6 | Tendencia del Activo | Puntuada / Opcional* | Close > SMA(50), Close > SMA(200), SMA(50) > SMA(200) |
 
-**Niveles de señal:**
-- 🟢 **READY** — C1 pasa + 3 o 4 de C2–C5
-- 🟡 **WATCH** — C1 pasa + exactamente 2 de C2–C5
-- 🔴 **NOT READY** — C1 falla o puntuación < 2
+*C6 puede configurarse como obligatoria (input `C6 obligatoria`). Por defecto puntúa como condición técnica estándar.
+
+**Niveles de señal (sistema 0–5):**
+- 🟢 **READY** — C1 pasa + 4 o 5 de C2–C6
+- 🟡 **WATCH** — C1 pasa + exactamente 3 de C2–C6
+- 🔴 **NOT READY** — C1 falla o puntuación < 3
+
+---
+
+## Tabla en Gráfico — Columnas (v3)
+
+| Columna | Contenido |
+|---------|-----------|
+| CONDICIÓN | Código y nombre (C1–C6) |
+| DESCRIPCIÓN | Lógica resumida del check |
+| VALOR | **Lectura numérica en tiempo real** (RSI, RVOL ratio, distancia SMA, etc.) |
+| STATUS | Badge PASS / FAIL |
 
 ---
 
@@ -55,16 +69,15 @@ ovtlier-plan-a-system/
 └── LICENSE
 ```
 
-El historial de versiones se gestiona íntegramente mediante commits y tags de Git — no se usa carpeta de archivo.
-
 ---
 
 ## Cómo Usarlo
 
 1. Abre TradingView → Pine Editor → pega el contenido de `indicators/ovtlier_plan_a.pine`
 2. Añade al gráfico en temporalidad **Daily o Weekly**
-3. Lee la tabla en el gráfico (arriba a la derecha por defecto, configurable)
+3. Lee la tabla en el gráfico (posición configurable desde los inputs)
 4. Opera solo señales READY — nunca fuerces un trade cuando C1 (régimen) falla
+5. Verifica C6: si el activo está por debajo de SMA 50/200, la señal es de menor calidad
 
 ---
 
@@ -74,7 +87,7 @@ Cada señal incluye un **Stop Loss sugerido** calculado como:
 ```
 SL = Minimo de barra - (ATR(14) x multiplicador)
 ```
-Multiplicador por defecto: **1.5×**. Ajustable en los inputs del indicador.
+Multiplicador por defecto: **1.5×**. La tabla muestra el nivel absoluto y la distancia porcentual al cierre actual.
 
 > ⚠️ Este indicador es una herramienta educativa. No constituye asesoramiento financiero. Aplica siempre tus propias reglas de gestión del riesgo antes de entrar en cualquier posición.
 
