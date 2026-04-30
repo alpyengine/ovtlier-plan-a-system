@@ -1,39 +1,76 @@
 // ═══════════════════════════════════════════════════════════════
-// © Ovtlier University | Plan A Swing Indicator v1
+// © Ovtlier University | Plan A Swing Indicator v2
 // Basado en la metodología de Christopher Uhl
 // Temporalidades: Daily (D) y Weekly (W)
+// v2: Tabla rediseñada — alto contraste, badges PASS/FAIL,
+//     posición configurable desde inputs
 // ═══════════════════════════════════════════════════════════════
 //@version=6
-indicator("Ovtlier Plan A - Swing v1", overlay = true, max_bars_back = 500)
+indicator("Ovtlier Plan A - Swing v2", overlay = true, max_bars_back = 500)
 
 // ─── INPUTS ───────────────────────────────────────────────────
 
-// 📊 Parámetros de régimen (Condición 1)
-spyEmaLen  = input.int(20,  "EMA Régimen SPY",  group = "📊 Régimen de Mercado", minval = 5)
-qqqEmaLen  = input.int(20,  "EMA Régimen QQQ",  group = "📊 Régimen de Mercado", minval = 5)
+// 📊 Régimen de Mercado
+spyEmaLen  = input.int(20,   "EMA Régimen SPY",      group = "📊 Régimen de Mercado", minval = 5)
+qqqEmaLen  = input.int(20,   "EMA Régimen QQQ",      group = "📊 Régimen de Mercado", minval = 5)
 
-// 📊 Parámetros técnicos del activo (Condiciones 2-5)
-emaFastLen = input.int(9,   "EMA Rápida",       group = "📊 Parámetros Técnicos", minval = 3)
-emaSlowLen = input.int(21,  "EMA Lenta",        group = "📊 Parámetros Técnicos", minval = 5)
-rsiLen     = input.int(14,  "RSI Longitud",     group = "📊 Parámetros Técnicos", minval = 2)
-rsiOB      = input.int(40,  "RSI Sobreventa",   group = "📊 Parámetros Técnicos", minval = 10, maxval = 50)
-rsi2Len    = input.int(2,   "RSI-2 Longitud",   group = "📊 Parámetros Técnicos", minval = 1)
-rsi2OB     = input.float(10.0,"RSI-2 Umbral",   group = "📊 Parámetros Técnicos", minval = 1.0, maxval = 30.0)
-rvolMult   = input.float(1.5, "RVOL Multiplicador", group = "📊 Parámetros Técnicos", minval = 1.0, step = 0.1)
-rvolLen    = input.int(20,  "RVOL Longitud",    group = "📊 Parámetros Técnicos", minval = 5)
+// 📊 Parámetros Técnicos
+emaFastLen = input.int(9,    "EMA Rápida",           group = "📊 Parámetros Técnicos", minval = 3)
+emaSlowLen = input.int(21,   "EMA Lenta",            group = "📊 Parámetros Técnicos", minval = 5)
+rsiLen     = input.int(14,   "RSI Longitud",         group = "📊 Parámetros Técnicos", minval = 2)
+rsiOB      = input.int(40,   "RSI Umbral Sobreventa",group = "📊 Parámetros Técnicos", minval = 10, maxval = 50)
+rsi2Len    = input.int(2,    "RSI-2 Longitud",       group = "📊 Parámetros Técnicos", minval = 1)
+rsi2OB     = input.float(10.0,"RSI-2 Umbral",        group = "📊 Parámetros Técnicos", minval = 1.0, maxval = 30.0)
+rvolMult   = input.float(1.5, "RVOL Multiplicador",  group = "📊 Parámetros Técnicos", minval = 1.0, step = 0.1)
+rvolLen    = input.int(20,   "RVOL Longitud",        group = "📊 Parámetros Técnicos", minval = 5)
 
-// ⚠️ Risk
-atrLen     = input.int(14,  "ATR Longitud",     group = "⚠️ Risk Management", minval = 1)
-atrSlMult  = input.float(1.5,"ATR Stop-Loss x", group = "⚠️ Risk Management", minval = 0.5, step = 0.1)
+// ⚠️ Risk Management
+atrLen     = input.int(14,   "ATR Longitud",         group = "⚠️ Risk Management", minval = 1)
+atrSlMult  = input.float(1.5,"ATR Stop-Loss ×",      group = "⚠️ Risk Management", minval = 0.5, step = 0.1)
 
-// 🎨 Visualización
-showRegime = input.bool(true, "Mostrar fondo régimen",  group = "🎨 Visual")
-showTable  = input.bool(true, "Mostrar tabla scoring",  group = "🎨 Visual")
-showSL     = input.bool(true, "Mostrar Stop-Loss",      group = "🎨 Visual")
+// 🎨 Visual
+showRegime   = input.bool(true,  "Mostrar fondo régimen",  group = "🎨 Visual")
+showTable    = input.bool(true,  "Mostrar tabla scoring",  group = "🎨 Visual")
+showSL       = input.bool(true,  "Mostrar Stop-Loss",      group = "🎨 Visual")
+tablePosInput = input.string("Top Right", "Posición tabla",
+     options = ["Top Right", "Top Left", "Top Center", "Bottom Right", "Bottom Left", "Bottom Center", "Middle Right", "Middle Left"],
+     group = "🎨 Visual")
+
+// ─── RESOLVER POSICIÓN DE TABLA ───────────────────────────────
+tablePos = switch tablePosInput
+    "Top Right"     => position.top_right
+    "Top Left"      => position.top_left
+    "Top Center"    => position.top_center
+    "Bottom Right"  => position.bottom_right
+    "Bottom Left"   => position.bottom_left
+    "Bottom Center" => position.bottom_center
+    "Middle Right"  => position.middle_right
+    "Middle Left"   => position.middle_left
+    => position.top_right
+
+// ─── COLORES CONSTANTES ───────────────────────────────────────
+// Paleta de alto contraste inspirada en el ejemplo de referencia
+
+color C_HEADER_BG    = color.new(#1a2433, 0)   // azul marino oscuro — cabecera
+color C_HEADER_TXT   = color.white
+color C_ROW_BG       = color.new(#0d1117, 0)   // negro profundo — filas
+color C_ROW_ALT_BG   = color.new(#141c26, 0)   // fila alternada ligeramente más clara
+color C_LABEL_TXT    = color.new(#c9d1d9, 0)   // gris claro — texto labels
+color C_PASS_BG      = color.new(#1a6b3c, 0)   // verde sólido — PASS
+color C_PASS_TXT     = color.white
+color C_FAIL_BG      = color.new(#8b1a1a, 0)   // rojo sólido — FAIL
+color C_FAIL_TXT     = color.white
+color C_WARN_BG      = color.new(#7a5c00, 0)   // naranja oscuro — WATCH
+color C_WARN_TXT     = color.white
+color C_READY_BG     = color.new(#0d5c2e, 0)   // verde fuerte — READY
+color C_NOTREADY_BG  = color.new(#6b0f0f, 0)   // rojo fuerte — NOT READY
+color C_TICKER_BG    = color.new(#0f1923, 0)   // fila ticker
+color C_TICKER_TXT   = color.new(#58a6ff, 0)   // azul claro — ticker text
+color C_OBLIG_BG     = color.new(#1a2d1a, 0)   // verde muy oscuro — fila obligatoria
 
 // ─── CONDICIÓN 1: RÉGIMEN BROAD MARKET (SPY + QQQ) ───────────
-// Ambos índices deben cerrar POR ENCIMA de su EMA(20) en la barra confirmada.
-// Usamos [1] + lookahead_on para evitar repainting.
+// Ambos índices deben cerrar por encima de su EMA en barra confirmada.
+// Anti-repainting: close[1] + lookahead_on.
 
 [spyClose, spyEma] = request.security("AMEX:SPY", timeframe.period,
      [close[1], ta.ema(close, spyEmaLen)[1]], lookahead = barmerge.lookahead_on)
@@ -41,125 +78,139 @@ showSL     = input.bool(true, "Mostrar Stop-Loss",      group = "🎨 Visual")
 [qqqClose, qqqEma] = request.security("NASDAQ:QQQ", timeframe.period,
      [close[1], ta.ema(close, qqqEmaLen)[1]], lookahead = barmerge.lookahead_on)
 
-bool spyBull   = spyClose > spyEma   // SPY sobre su EMA → régimen alcista
-bool qqqBull   = qqqClose > qqqEma   // QQQ sobre su EMA → régimen alcista
-bool c1_regime = spyBull and qqqBull // AMBOS deben ser true
+bool spyBull   = spyClose > spyEma
+bool qqqBull   = qqqClose > qqqEma
+bool c1_regime = spyBull and qqqBull  // OBLIGATORIA: ambos deben ser true
 
 // ─── CONDICIÓN 2: PULLBACK A ZONA DE VALOR ───────────────────
-// El precio ha tocado o cruzado la EMA rápida o lenta (zona de soporte dinámico).
-// En Plan A esto representa el "buy the dip" al soporte institucional.
+// Precio toca o entra entre EMA rápida y EMA lenta (soporte dinámico).
 
-float emaFast  = ta.ema(close, emaFastLen)
-float emaSlow  = ta.ema(close, emaSlowLen)
-
-// Precio toca o entra en la zona entre EMA9 y EMA21
-bool  c2_dip   = low <= emaFast and close >= emaSlow * 0.98
-// Nota: 0.98 permite un mínimo de cierre ligeramente por debajo sin romper
+float emaFast = ta.ema(close, emaFastLen)
+float emaSlow = ta.ema(close, emaSlowLen)
+bool  c2_dip  = low <= emaFast and close >= emaSlow * 0.98
 
 // ─── CONDICIÓN 3: SOBREVENTA RELATIVA (RSI-14 + RSI-2) ───────
-// RSI(14) < 40 O RSI(2) < 10: el activo está "frío" sin romperse.
-// La idea de Uhl: comprar debilidad temporal en tendencia alcista.
+// Debilidad temporal en tendencia alcista.
 
-float rsiVal   = ta.rsi(close, rsiLen)
-float rsi2Val  = ta.rsi(close, rsi2Len)
-bool  c3_rsi   = rsiVal < rsiOB or rsi2Val < rsi2OB
+float rsiVal  = ta.rsi(close, rsiLen)
+float rsi2Val = ta.rsi(close, rsi2Len)
+bool  c3_rsi  = rsiVal < rsiOB or rsi2Val < rsi2OB
 
 // ─── CONDICIÓN 4: RVOL ELEVADO ────────────────────────────────
-// Volumen actual > multiplicador × media de los últimos N días.
-// Indica interés institucional en la zona de soporte.
+// Volumen actual supera la media × multiplicador.
 
-float avgVol   = ta.sma(volume, rvolLen)
-bool  c4_rvol  = volume > rvolMult * avgVol
+float avgVol  = ta.sma(volume, rvolLen)
+bool  c4_rvol = volume > rvolMult * avgVol
 
 // ─── CONDICIÓN 5: VELA DE REVERSIÓN (HAMMER) ─────────────────
-// Lower wick > 2× el cuerpo → rechazo fuerte del nivel inferior.
-// Señal de que los compradores han absorbido la oferta.
+// Mecha inferior ≥ 2× el cuerpo, mecha superior pequeña.
 
-float body     = math.abs(close - open)
-float lowerW   = open > close ? (open - low) : (close - low)  // mecha inferior
-float upperW   = open > close ? (high - open) : (high - close) // mecha superior
-// Hammer: mecha baja al menos el doble del cuerpo, mecha alta pequeña
-bool  c5_candle = lowerW >= 2 * body and upperW <= body and body > 0
+float body    = math.abs(close - open)
+float lowerW  = open > close ? (open - low)  : (close - low)
+float upperW  = open > close ? (high - open) : (high - close)
+bool  c5_candle = lowerW >= 2.0 * body and upperW <= body and body > 0.0
 
-// ─── SCORING: CUÁNTAS CONDICIONES SE CUMPLEN ─────────────────
-// Condición 1 es OBLIGATORIA (sin régimen, no hay trade).
-// Las condiciones 2-5 puntúan de 0 a 4.
+// ─── SCORING ──────────────────────────────────────────────────
+// C1 es obligatoria. C2-C5 suman de 0 a 4.
 
-int score = (c2_dip ? 1 : 0) + (c3_rsi ? 1 : 0) + (c4_rvol ? 1 : 0) + (c5_candle ? 1 : 0)
+int score         = (c2_dip ? 1 : 0) + (c3_rsi ? 1 : 0) + (c4_rvol ? 1 : 0) + (c5_candle ? 1 : 0)
+bool fullSignal   = c1_regime and score >= 3   // señal fuerte: ≥ 3/4
+bool partialSignal = c1_regime and score == 2  // vigilancia: 2/4
 
-// Señal completa: régimen OK + mínimo 3 de 4 condiciones técnicas
-bool fullSignal    = c1_regime and score >= 3  // señal fuerte
-bool partialSignal = c1_regime and score == 2  // señal de vigilancia
-
-// ─── STOP LOSS SUGERIDO (ATR) ─────────────────────────────────
+// ─── STOP LOSS SUGERIDO ───────────────────────────────────────
 float atrVal  = ta.atr(atrLen)
-float slLevel = low - atrSlMult * atrVal  // stop debajo del low + buffer ATR
+float slLevel = low - atrSlMult * atrVal
 
 // ─── VISUALIZACIÓN SOBRE EL GRÁFICO ──────────────────────────
 
-// Fondo verde suave cuando el régimen es alcista
-bgcolor(showRegime and c1_regime ? color.new(color.teal, 93) : na, title = "Fondo régimen alcista")
+bgcolor(showRegime and c1_regime ? color.new(color.teal, 93) : na, title = "Fondo régimen")
 
-// Señales en el gráfico
-plotshape(fullSignal,    "Plan A Signal",   shape.triangleup,   location.belowbar, color.new(color.teal,  0),  size = size.normal,  text = "A")
-plotshape(partialSignal, "Plan A Watch",    shape.triangleup,   location.belowbar, color.new(color.yellow,0),  size = size.small,   text = "~A")
+plotshape(fullSignal,    "Plan A Signal", shape.triangleup, location.belowbar, color.new(color.teal,   0), size = size.normal, text = "A")
+plotshape(partialSignal, "Plan A Watch",  shape.triangleup, location.belowbar, color.new(color.yellow, 0), size = size.small,  text = "~A")
 
-// EMAs del activo
-plot(emaFast, "EMA Rápida",  color.new(color.blue,   0), 1)
-plot(emaSlow, "EMA Lenta",   color.new(color.orange, 0), 2)
+plot(emaFast, "EMA Rápida", color.new(color.blue,   0), 1)
+plot(emaSlow, "EMA Lenta",  color.new(color.orange, 0), 2)
 
-// Stop Loss sugerido (solo en señal completa)
 var line slLine = na
 if fullSignal
     if not na(slLine)
         line.delete(slLine)
-    slLine := showSL ? line.new(bar_index, slLevel, bar_index + 5, slLevel, color = color.new(color.red, 30), width = 1, style = line.style_dashed) : na
+    slLine := showSL ? line.new(bar_index, slLevel, bar_index + 5, slLevel, color = color.new(color.red, 20), width = 1, style = line.style_dashed) : na
 
-// ─── TABLA DE SCORING ─────────────────────────────────────────
-var table scoreTable = table.new(position.top_right, 3, 7, bgcolor = color.new(color.gray, 85), border_color = color.new(color.gray, 60), border_width = 1)
+// ─── TABLA DE ALTO CONTRASTE ──────────────────────────────────
+// 3 columnas × 9 filas:
+//   Fila 0: Cabecera título
+//   Fila 1: Ticker | Timeframe
+//   Fila 2: C1 RÉGIMEN (obligatoria, fondo especial)
+//   Filas 3-6: C2-C5 técnicas
+//   Fila 7: separador / subtítulo score
+//   Fila 8: resultado final
+
+var table t = table.new(tablePos, 3, 9, border_color = color.new(color.black, 0), border_width = 1, frame_color = color.new(color.black, 0), frame_width = 2)
+
+// Función auxiliar para badge PASS / FAIL
+f_badge(bool cond) =>
+    cond ? "✔  PASS" : "✘  FAIL"
+
+f_badgeBg(bool cond) =>
+    cond ? C_PASS_BG : C_FAIL_BG
+
+f_badgeTxt(bool cond) =>
+    cond ? C_PASS_TXT : C_FAIL_TXT
 
 if showTable and barstate.islast
-    // Cabecera
-    table.cell(scoreTable, 0, 0, "PLAN A",    text_color = color.white, text_size = size.small, bgcolor = color.new(color.teal, 20))
-    table.cell(scoreTable, 1, 0, "Estado",    text_color = color.white, text_size = size.small, bgcolor = color.new(color.teal, 20))
-    table.cell(scoreTable, 2, 0, "OK?",       text_color = color.white, text_size = size.small, bgcolor = color.new(color.teal, 20))
 
-    // Condición 1 — RÉGIMEN (obligatoria)
-    table.cell(scoreTable, 0, 1, "C1 Régimen",    text_color = color.silver, text_size = size.tiny)
-    table.cell(scoreTable, 1, 1, "SPY+QQQ>EMA",   text_color = color.silver, text_size = size.tiny)
-    table.cell(scoreTable, 2, 1, c1_regime ? "✅" : "❌", text_color = c1_regime ? color.teal : color.red, text_size = size.tiny)
+    // ── Fila 0: Cabecera ─────────────────────────────────────
+    table.cell(t, 0, 0, "OVTLIER PLAN A",   text_color = C_HEADER_TXT, text_size = size.small, bgcolor = C_HEADER_BG, text_halign = text.align_left)
+    table.cell(t, 1, 0, "CONDICIÓN",         text_color = C_HEADER_TXT, text_size = size.small, bgcolor = C_HEADER_BG)
+    table.cell(t, 2, 0, "STATUS",            text_color = C_HEADER_TXT, text_size = size.small, bgcolor = C_HEADER_BG)
 
-    // Condición 2 — PULLBACK
-    table.cell(scoreTable, 0, 2, "C2 Dip",         text_color = color.silver, text_size = size.tiny)
-    table.cell(scoreTable, 1, 2, "Low≤EMA9",        text_color = color.silver, text_size = size.tiny)
-    table.cell(scoreTable, 2, 2, c2_dip ? "✅" : "—", text_color = c2_dip ? color.teal : color.gray, text_size = size.tiny)
+    // ── Fila 1: Ticker + Timeframe ───────────────────────────
+    table.cell(t, 0, 1, syminfo.ticker,      text_color = C_TICKER_TXT, text_size = size.small, bgcolor = C_TICKER_BG, text_halign = text.align_left)
+    table.cell(t, 1, 1, "TF: " + timeframe.period, text_color = C_TICKER_TXT, text_size = size.small, bgcolor = C_TICKER_BG)
+    table.cell(t, 2, 1, "SPY " + (spyBull ? "✔" : "✘") + "  QQQ " + (qqqBull ? "✔" : "✘"), text_color = c1_regime ? color.new(#4caf50, 0) : color.new(#f44336, 0), text_size = size.tiny, bgcolor = C_TICKER_BG)
 
-    // Condición 3 — RSI
-    table.cell(scoreTable, 0, 3, "C3 RSI",          text_color = color.silver, text_size = size.tiny)
-    table.cell(scoreTable, 1, 3, "RSI<40|RSI2<10",  text_color = color.silver, text_size = size.tiny)
-    table.cell(scoreTable, 2, 3, c3_rsi ? "✅" : "—", text_color = c3_rsi ? color.teal : color.gray, text_size = size.tiny)
+    // ── Fila 2: C1 RÉGIMEN (obligatoria) ────────────────────
+    table.cell(t, 0, 2, "C1 · Régimen",      text_color = C_LABEL_TXT,  text_size = size.small, bgcolor = C_OBLIG_BG, text_halign = text.align_left)
+    table.cell(t, 1, 2, "SPY + QQQ > EMA",   text_color = C_LABEL_TXT,  text_size = size.small, bgcolor = C_OBLIG_BG)
+    table.cell(t, 2, 2, f_badge(c1_regime),   text_color = f_badgeTxt(c1_regime), text_size = size.small, bgcolor = f_badgeBg(c1_regime))
 
-    // Condición 4 — RVOL
-    table.cell(scoreTable, 0, 4, "C4 RVOL",         text_color = color.silver, text_size = size.tiny)
-    table.cell(scoreTable, 1, 4, "Vol>1.5x avg",    text_color = color.silver, text_size = size.tiny)
-    table.cell(scoreTable, 2, 4, c4_rvol ? "✅" : "—", text_color = c4_rvol ? color.teal : color.gray, text_size = size.tiny)
+    // ── Fila 3: C2 Pullback ──────────────────────────────────
+    table.cell(t, 0, 3, "C2 · Dip",          text_color = C_LABEL_TXT,  text_size = size.small, bgcolor = C_ROW_BG, text_halign = text.align_left)
+    table.cell(t, 1, 3, "Low ≤ EMA " + str.tostring(emaFastLen), text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG)
+    table.cell(t, 2, 3, f_badge(c2_dip),      text_color = f_badgeTxt(c2_dip), text_size = size.small, bgcolor = f_badgeBg(c2_dip))
 
-    // Condición 5 — VELA
-    table.cell(scoreTable, 0, 5, "C5 Vela",         text_color = color.silver, text_size = size.tiny)
-    table.cell(scoreTable, 1, 5, "Hammer",           text_color = color.silver, text_size = size.tiny)
-    table.cell(scoreTable, 2, 5, c5_candle ? "✅" : "—", text_color = c5_candle ? color.teal : color.gray, text_size = size.tiny)
+    // ── Fila 4: C3 RSI ──────────────────────────────────────
+    table.cell(t, 0, 4, "C3 · RSI",           text_color = C_LABEL_TXT,  text_size = size.small, bgcolor = C_ROW_ALT_BG, text_halign = text.align_left)
+    table.cell(t, 1, 4, "RSI<" + str.tostring(rsiOB) + " | RSI2<" + str.tostring(rsi2OB, "#"), text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_ALT_BG)
+    table.cell(t, 2, 4, f_badge(c3_rsi),       text_color = f_badgeTxt(c3_rsi), text_size = size.small, bgcolor = f_badgeBg(c3_rsi))
 
-    // Score total
-    string scoreLabel = str.tostring(score) + "/4"
-    color  scoreBg    = fullSignal ? color.new(color.teal, 20) : partialSignal ? color.new(color.orange, 20) : color.new(color.gray, 60)
-    string scoreText  = fullSignal ? "🟢 " + scoreLabel : partialSignal ? "🟡 " + scoreLabel : "⚪ " + scoreLabel
-    table.cell(scoreTable, 0, 6, "SCORE",        text_color = color.white, text_size = size.small, bgcolor = scoreBg)
-    table.cell(scoreTable, 1, 6, scoreText,      text_color = color.white, text_size = size.small, bgcolor = scoreBg)
-    table.cell(scoreTable, 2, 6, c1_regime ? (fullSignal ? "LONG" : "WATCH") : "NO GO", text_color = color.white, text_size = size.small, bgcolor = scoreBg)
+    // ── Fila 5: C4 RVOL ─────────────────────────────────────
+    table.cell(t, 0, 5, "C4 · RVOL",          text_color = C_LABEL_TXT,  text_size = size.small, bgcolor = C_ROW_BG, text_halign = text.align_left)
+    table.cell(t, 1, 5, "Vol > " + str.tostring(rvolMult, "#.#") + "× avg", text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG)
+    table.cell(t, 2, 5, f_badge(c4_rvol),      text_color = f_badgeTxt(c4_rvol), text_size = size.small, bgcolor = f_badgeBg(c4_rvol))
+
+    // ── Fila 6: C5 Vela Hammer ──────────────────────────────
+    table.cell(t, 0, 6, "C5 · Hammer",         text_color = C_LABEL_TXT,  text_size = size.small, bgcolor = C_ROW_ALT_BG, text_halign = text.align_left)
+    table.cell(t, 1, 6, "Wick ≥ 2× Body",      text_color = C_LABEL_TXT,  text_size = size.small, bgcolor = C_ROW_ALT_BG)
+    table.cell(t, 2, 6, f_badge(c5_candle),     text_color = f_badgeTxt(c5_candle), text_size = size.small, bgcolor = f_badgeBg(c5_candle))
+
+    // ── Fila 7: Score subtítulo ──────────────────────────────
+    string scoreStr  = str.tostring(score) + "/4 técnicas"
+    color  scoreBg   = fullSignal ? C_READY_BG : partialSignal ? C_WARN_BG : color.new(#1a1a2e, 0)
+    table.cell(t, 0, 7, "SCORE",               text_color = color.white, text_size = size.small, bgcolor = scoreBg)
+    table.cell(t, 1, 7, scoreStr,              text_color = color.white, text_size = size.small, bgcolor = scoreBg)
+    table.cell(t, 2, 7, "SL: " + str.tostring(slLevel, "#.##"), text_color = color.new(#ffcdd2, 0), text_size = size.tiny, bgcolor = scoreBg)
+
+    // ── Fila 8: Resultado final ──────────────────────────────
+    string resultTxt = fullSignal ? "🟢  READY (" + str.tostring(score) + "/4)" : partialSignal ? "🟡  WATCH (" + str.tostring(score) + "/4)" : "🔴  NOT READY (" + str.tostring(score) + "/4)"
+    color  resultBg  = fullSignal ? C_READY_BG : partialSignal ? C_WARN_BG : C_NOTREADY_BG
+    string versionTxt = "Ovtlier Plan A v2 · " + str.tostring(year) + "-" + str.tostring(month, "00") + "-" + str.tostring(dayofmonth, "00")
+    table.merge_cells(t, 0, 8, 2, 8)
+    table.cell(t, 0, 8, resultTxt,             text_color = color.white, text_size = size.normal, bgcolor = resultBg)
 
 // ─── ALERTAS ──────────────────────────────────────────────────
 
-// alert() para mensajes dinámicos (con ticker, precio, score)
 string alertBase = syminfo.ticker + " | TF: " + timeframe.period + " | Close: " + str.tostring(close, "#.##") + " | SL: " + str.tostring(slLevel, "#.##") + " | Score: " + str.tostring(score) + "/4"
 
 if fullSignal
@@ -168,6 +219,5 @@ if fullSignal
 if partialSignal
     alert("🟡 PLAN A VIGILAR | " + alertBase, alert.freq_once_per_bar_close)
 
-// alertcondition() para el panel de alertas de TradingView (solo const string)
-alertcondition(fullSignal,    title = "Plan A - Señal Completa",  message = "Plan A: Señal completa detectada. Revisa el gráfico.")
-alertcondition(partialSignal, title = "Plan A - Señal Parcial",   message = "Plan A: 2/4 condiciones. Modo vigilancia.")
+alertcondition(fullSignal,    title = "Plan A - Señal Completa", message = "Plan A: Señal completa. Revisa el gráfico.")
+alertcondition(partialSignal, title = "Plan A - Señal Parcial",  message = "Plan A: 2/4 condiciones. Modo vigilancia.")
