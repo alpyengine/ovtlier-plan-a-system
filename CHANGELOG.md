@@ -6,110 +6,92 @@ Tags use the format `plan-a/vN` (e.g. `plan-a/v1`, `plan-a/v2`).
 
 ---
 
-## [plan-a/v4] — 2026-04-30 (Current)
+## [plan-a/v5] — 2026-04-30 (Current)
 
 ### Added
 
-**C2 Pullback mejorado — ventana de tendencia previa configurable:**
-- `c2TrendBars` input (default 3, range 1-10): number of prior bars that must
-  have closed above EMA fast before the current pullback qualifies.
-  Prevents C2 from triggering in sideways/ranging markets with no clear
-  prior uptrend. The table VALOR column shows `X/N barras OK` live,
-  making it immediately visible how many bars passed the trend context check.
-- `c2_priorTrend` bool: true when `barsAboveEma >= c2TrendBars`.
-- `c2_touchEma` bool: unchanged from v3 (low <= EMA fast, close >= EMA slow x 0.98).
-- C2 now requires BOTH conditions: prior trend context AND the actual dip touch.
-  Condition renamed from "C2 Dip" to "C2 Dip+" in table to signal the upgrade.
-
-**C1 doble timeframe — régimen confirmado en TF superior:**
-- `useSuperTF` boolean input (default OFF): activates the higher-timeframe
-  regime check. When ON, SPY+QQQ are also evaluated against their EMA
-  on the timeframe above the current chart (Daily -> Weekly, Weekly -> Monthly).
-- `superTFRequired` boolean input (default OFF): when ON, the higher-TF regime
-  acts as a second mandatory gate alongside C1 — no signal fires if it fails.
-  When OFF, it contributes +1 point to the score (puntuada mode).
-- `f_superTF()` helper function: resolves the superior timeframe string
-  from the current chart timeframe automatically (no manual entry needed).
-- `spyBullSup`, `qqqBullSup`, `c1_superTF` bools: higher-TF regime sub-checks.
-- `superTFGate` bool: combined gate that respects both `useSuperTF` and
-  `superTFRequired` settings.
-- C1b row added to table (row 3): shows TF label, SPY/QQQ sub-status,
-  mode badge (OBLIGATORIA / PUNTUADA +1 / OFF), and PASS/FAIL badge.
-  Row uses `C_STF_BG` (deep purple `#1f1a2d`) to visually distinguish it
-  from C1 base row. Row is visually dimmed when `useSuperTF` is OFF.
-- `C_STF_BG` color constant added (`#1f1a2d`).
-- When `useSuperTF` ON and `superTFRequired` OFF: `scoreMax` increases from
-  5 to 6; READY threshold becomes >= 5/6; WATCH threshold becomes == 4/6.
-- Config summary row added (row 11): merged, shows active settings for C2, C6,
-  and TF superior in a single compact line (`C2:3b  C6:punt  TFsup:OFF`).
-- Alert string expanded: now includes `C2bars: X/N` and `TFsup: OK/FAIL/OFF`.
+**C7 - Divergencia Alcista RSI (condición bonus):**
+- `useC7` boolean input (default ON): activates C7. When OFF the row is
+  visible in the table but visually dimmed and has no effect on score or gates.
+- `c7Lookback` int input (default 5, range 2-20): the lookback window in bars
+  used to find the prior price low and prior RSI low for the divergence check.
+  A larger window detects longer-range divergences; a smaller window detects
+  faster, tighter ones. The live value `LB:Nb` is shown in the table VALOR column.
+- `c7Required` boolean input (default OFF): when ON, C7 acts as a mandatory gate
+  — no signal if divergence is absent. When OFF, C7 scores +1 point (puntuada).
+- `showDivLine` boolean input (default ON): when a divergence is detected,
+  draws a dashed lime line on the chart connecting the prior price low to the
+  current low, making the divergence visually obvious on the chart.
+- `c7_priceLL` bool: price makes a lower low vs. the prior N-bar low.
+- `c7_rsiHL`   bool: RSI makes a higher low vs. the prior N-bar RSI low.
+- `c7_divRaw`  bool: both conditions true (raw divergence, ignoring useC7).
+- `c7_div`     bool: final C7 pass/fail, respects useC7 toggle.
+- `c7RsiDiff`  float: RSI current minus RSI prior low — positive = real divergence.
+  Shown in table as `RSIdiff +X.X` for quick visual confirmation.
+- `C_C7_BG` color constant (`#1a2020`, dark teal-green): dedicated row background
+  for C7, visually distinct from C6 and TF superior rows.
+- `scoreC7` int: contributes 1 to score when useC7=ON and c7Required=OFF and divergence detected.
+- `scoreMax` is now fully dynamic: 5 base + optional TF sup (+1) + optional C7 (+1) = max 7.
 
 ### Changed
-- Table dimensions: 4 columns x 11 rows (v3) -> 4 columns x 13 rows (v4).
-  Two new rows: C1b TF superior (row 3), config summary (row 11).
-- `scoreMax` is now dynamic: 5 when TF superior is OFF or mandatory;
-  6 when TF superior is ON and puntuada.
-- READY/WATCH thresholds derived from `scoreMax` dynamically:
-  READY >= scoreMax-1; WATCH == scoreMax-2.
-- C2 table label: `"C2 Dip"` -> `"C2 Dip+"` to signal the logic upgrade.
-- C2 VALOR cell: now shows trend context result (`X/N barras OK`) with
-  color coding — blue when trend OK, red-tinted when trend context fails.
-- `indicator()` title: `"Ovtlier Plan A - Swing v3"` -> `"Ovtlier Plan A - Swing v4"`.
+- `scoreMax` formula updated: `5 + (useSuperTF and not superTFRequired ? 1 : 0) + (useC7 and not c7Required ? 1 : 0)`.
+- Table dimensions: 4x13 (v4) -> 4x14 (v5). New row 9 for C7.
+- Config summary row (row 12) now includes C7 status: `C7:OFF`, `C7:punt Nb`, or `C7:OBLIG Nb`.
+- Alert string: added `C7div: OK/FAIL/OFF` field.
+- `indicator()` title: `"Ovtlier Plan A - Swing v4"` -> `"Ovtlier Plan A - Swing v5"`.
+
+---
+
+## [plan-a/v4] — 2026-04-30
+
+### Added
+- C2 improved: `c2TrendBars` input (default 3, range 1-10). N prior bars must
+  close above EMA fast before the dip qualifies. Table shows `X/N barras OK` live.
+- C1 dual timeframe: `useSuperTF` and `superTFRequired` inputs. Daily -> Weekly,
+  Weekly -> Monthly. C1b row in table with individual SPY/QQQ status per TF.
+- `f_superTF()` helper resolves the superior TF string automatically.
+- `scoreMax` dynamic: 5 or 6 depending on TF sup mode.
+- Config summary row (row 11) and version footer (row 12).
+
+### Changed
+- Table: 4x11 -> 4x13 rows. C2 label: "C2 Dip" -> "C2 Dip+".
+- READY/WATCH thresholds derived from `scoreMax` dynamically.
 
 ---
 
 ## [plan-a/v3] — 2026-04-30
 
 ### Added
-- **C6 - Asset Trend Filter**: three simultaneous sub-conditions:
-  `close > SMA(50)`, `close > SMA(200)`, `SMA(50) > SMA(200)`.
-- `sma50Len`, `sma200Len` configurable inputs.
-- `c6Required` boolean: toggle C6 as mandatory gate (default OFF).
-- VALOR column (col 2) added to table with live numeric readings per condition.
-- `distSma50`, `distSma200`: % distance of close from each SMA, shown live.
-- `rvolRatio`: volume/avg ratio shown live in C4.
-- `slPct`: SL distance as % of close shown in score row.
-- SMA 50 (purple) and SMA 200 (yellow) plotted on chart.
-- Version footer row (row 10) merged across all 4 columns.
+- C6: `close > SMA(50)`, `close > SMA(200)`, `SMA(50) > SMA(200)`.
+- VALOR column (col 2) with live numeric readings per condition.
+- `distSma50`, `distSma200`, `rvolRatio`, `slPct` live values.
+- SMA 50/200 plotted. Version footer row.
 
 ### Changed
-- Max score: 4 -> 5. READY: >= 3/4 -> >= 4/5. WATCH: == 2/4 -> == 3/5.
-- Table: 3x9 (v2) -> 4x11 (v3). Column 2 (VALOR) added.
-- SL display: absolute price -> `SL XX.XX  (-X.X%)`.
-- Alert string: added C6 status and SL% fields.
-
-### Fixed
-- Unicode removed from `f_badge()` and `alertcondition()` to prevent encoding issues.
+- Max score: 4->5. READY: >=3/4 -> >=4/5. Table: 3x9 -> 4x11.
 
 ---
 
 ## [plan-a/v2] — 2026-04-30
 
 ### Added
-- `tablePosInput`: 8-position table placement dropdown.
-- Full high-contrast color palette: 11 named `color` constants.
-- Ticker sub-header row with SPY/QQQ individual status.
-- `f_badge()`, `f_badgeBg()`, `f_badgeTxt()` helper functions.
-- Alternating row backgrounds. Score row with SL. Merged result row.
+- 8-position table placement. High-contrast palette. PASS/FAIL badges.
+- Ticker row with SPY/QQQ individual status. Merged result row.
 
 ### Changed
-- Table: 3x7 -> 3x9. Background: gray -> `#0d1117`. C1 row: dark-green bg.
-- Status: emoji-only -> solid PASS/FAIL badges with white text.
-
-### Fixed
-- Text contrast: silver on light gray unreadable at `size.tiny` on high-DPI.
+- Table: 3x7 -> 3x9. Background: gray -> `#0d1117`.
 
 ---
 
 ## [plan-a/v1] — 2026-04-29
 
 ### Added
-- Initial release. C1 (SPY+QQQ regime), C2 (pullback), C3 (RSI), C4 (RVOL),
-  C5 (hammer). ATR stop loss. 3x7 table. EMA 9/21 on chart. Alerts.
+- Initial release: C1 (regime), C2 (pullback), C3 (RSI), C4 (RVOL), C5 (hammer).
+  ATR stop loss. 3x7 table. EMA 9/21 plotted. Dynamic and static alerts.
 
 ---
 
 ## Roadmap
 
-- [ ] v5 - Multi-symbol scanner (scan watchlist for Plan A setups)
-- [ ] Strategy - Plan A backtest with realistic commission and slippage
+- [ ] scanner/v1 - Multi-symbol scanner (new file: screeners/ovtlier_plan_a_scanner.pine)
+- [ ] backtest/v1 - Strategy backtest with commission and slippage (new file: strategies/ovtlier_plan_a_backtest.pine)

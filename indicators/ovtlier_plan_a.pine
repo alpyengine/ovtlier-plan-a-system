@@ -1,52 +1,62 @@
 // ═══════════════════════════════════════════════════════════════
-// © Ovtlier University | Plan A Swing Indicator v4
+// © Ovtlier University | Plan A Swing Indicator v5
 // Basado en la metodología de Christopher Uhl
 // Temporalidades: Daily (D) y Weekly (W)
-// v4: C2 mejorada — ventana de tendencia previa configurable
-//     C1 doble timeframe — régimen confirmado en TF superior
+// v5: C7 — Divergencia alcista RSI (condición bonus opcional)
+//     Precio: mínimo más bajo | RSI: mínimo más alto
 // ═══════════════════════════════════════════════════════════════
 //@version=6
-indicator("Ovtlier Plan A - Swing v4", overlay = true, max_bars_back = 500)
+indicator("Ovtlier Plan A - Swing v5", overlay = true, max_bars_back = 500)
 
 // ─── INPUTS ───────────────────────────────────────────────────
 
 // 📊 Régimen de Mercado — C1
-spyEmaLen      = input.int(20,  "EMA Régimen SPY",            group = "📊 Régimen de Mercado C1", minval = 5)
-qqqEmaLen      = input.int(20,  "EMA Régimen QQQ",            group = "📊 Régimen de Mercado C1", minval = 5)
-useSuperTF     = input.bool(false, "Activar doble TF (C1 superior)", group = "📊 Régimen de Mercado C1",
+spyEmaLen       = input.int(20,    "EMA Régimen SPY",             group = "📊 Régimen de Mercado C1", minval = 5)
+qqqEmaLen       = input.int(20,    "EMA Régimen QQQ",             group = "📊 Régimen de Mercado C1", minval = 5)
+useSuperTF      = input.bool(false, "Activar doble TF (C1 superior)", group = "📊 Régimen de Mercado C1",
      tooltip = "ON: verifica que SPY+QQQ también están en régimen alcista en el TF superior.\nDaily -> confirma en Weekly. Weekly -> confirma en Monthly.")
-superTFRequired = input.bool(false, "TF superior obligatorio",  group = "📊 Régimen de Mercado C1",
+superTFRequired = input.bool(false, "TF superior obligatorio",     group = "📊 Régimen de Mercado C1",
      tooltip = "ON: si el TF superior falla, no hay señal aunque C1 base pase.\nOFF: el TF superior suma 1 punto al score técnico.")
 
 // 📊 Parámetros Técnicos
-emaFastLen     = input.int(9,   "EMA Rápida",                 group = "📊 Parámetros Técnicos", minval = 3)
-emaSlowLen     = input.int(21,  "EMA Lenta",                  group = "📊 Parámetros Técnicos", minval = 5)
-rsiLen         = input.int(14,  "RSI Longitud",               group = "📊 Parámetros Técnicos", minval = 2)
-rsiOB          = input.int(40,  "RSI Umbral Sobreventa",      group = "📊 Parámetros Técnicos", minval = 10, maxval = 50)
-rsi2Len        = input.int(2,   "RSI-2 Longitud",             group = "📊 Parámetros Técnicos", minval = 1)
-rsi2OB         = input.float(10.0, "RSI-2 Umbral",            group = "📊 Parámetros Técnicos", minval = 1.0, maxval = 30.0)
-rvolMult       = input.float(1.5,  "RVOL Multiplicador",      group = "📊 Parámetros Técnicos", minval = 1.0, step = 0.1)
-rvolLen        = input.int(20,  "RVOL Longitud",              group = "📊 Parámetros Técnicos", minval = 5)
+emaFastLen      = input.int(9,     "EMA Rápida",                  group = "📊 Parámetros Técnicos", minval = 3)
+emaSlowLen      = input.int(21,    "EMA Lenta",                   group = "📊 Parámetros Técnicos", minval = 5)
+rsiLen          = input.int(14,    "RSI Longitud",                group = "📊 Parámetros Técnicos", minval = 2)
+rsiOB           = input.int(40,    "RSI Umbral Sobreventa",       group = "📊 Parámetros Técnicos", minval = 10, maxval = 50)
+rsi2Len         = input.int(2,     "RSI-2 Longitud",              group = "📊 Parámetros Técnicos", minval = 1)
+rsi2OB          = input.float(10.0,"RSI-2 Umbral",                group = "📊 Parámetros Técnicos", minval = 1.0, maxval = 30.0)
+rvolMult        = input.float(1.5, "RVOL Multiplicador",          group = "📊 Parámetros Técnicos", minval = 1.0, step = 0.1)
+rvolLen         = input.int(20,    "RVOL Longitud",               group = "📊 Parámetros Técnicos", minval = 5)
 
 // 🎯 C2 Pullback mejorado
-c2TrendBars    = input.int(3,   "C2 Barras tendencia previa", group = "🎯 C2 Pullback Mejorado", minval = 1, maxval = 10,
-     tooltip = "Número de barras anteriores que deben haber cerrado por encima de la EMA rápida antes del pullback actual.\nDefault 3. Rango: 1-10.")
+c2TrendBars     = input.int(3,     "C2 Barras tendencia previa",  group = "🎯 C2 Pullback Mejorado", minval = 1, maxval = 10,
+     tooltip = "Barras anteriores que deben haber cerrado sobre la EMA rápida antes del pullback.\nDefault 3. Rango: 1-10.")
 
 // 📈 Filtro de Tendencia del Activo — C6
-sma50Len       = input.int(50,  "SMA Media (defecto 50)",     group = "📈 Filtro Tendencia C6", minval = 10)
-sma200Len      = input.int(200, "SMA Larga (defecto 200)",    group = "📈 Filtro Tendencia C6", minval = 50)
-c6Required     = input.bool(false, "C6 obligatoria (además de C1)", group = "📈 Filtro Tendencia C6",
-     tooltip = "ON: sin tendencia alcista del activo no hay señal aunque C1 pase.\nOFF: C6 suma al score como el resto de condiciones técnicas.")
+sma50Len        = input.int(50,    "SMA Media (defecto 50)",      group = "📈 Filtro Tendencia C6", minval = 10)
+sma200Len       = input.int(200,   "SMA Larga (defecto 200)",     group = "📈 Filtro Tendencia C6", minval = 50)
+c6Required      = input.bool(false, "C6 obligatoria (además de C1)", group = "📈 Filtro Tendencia C6",
+     tooltip = "ON: sin tendencia alcista del activo no hay señal aunque C1 pase.\nOFF: C6 suma al score.")
+
+// 📉 Divergencia RSI — C7 (nuevo en v5)
+useC7           = input.bool(true,  "Activar C7 Divergencia RSI", group = "📉 Divergencia RSI C7",
+     tooltip = "ON: busca divergencia alcista entre precio (LL) y RSI (HL) en la ventana definida.\nOFF: C7 no aparece en tabla ni afecta al score.")
+c7Lookback      = input.int(5,     "C7 Ventana barras (lookback)", group = "📉 Divergencia RSI C7", minval = 2, maxval = 20,
+     tooltip = "Barras hacia atrás para buscar el mínimo de precio y RSI previo.\nDefault 5. Con más barras detecta divergencias más largas.\nRango: 2-20.")
+c7Required      = input.bool(false, "C7 obligatoria",             group = "📉 Divergencia RSI C7",
+     tooltip = "ON: sin divergencia RSI no hay señal.\nOFF: C7 suma 1 punto al score (puntuada).")
 
 // ⚠️ Risk Management
-atrLen         = input.int(14,  "ATR Longitud",               group = "⚠️ Risk Management", minval = 1)
-atrSlMult      = input.float(1.5, "ATR Stop-Loss x",          group = "⚠️ Risk Management", minval = 0.5, step = 0.1)
+atrLen          = input.int(14,    "ATR Longitud",                group = "⚠️ Risk Management", minval = 1)
+atrSlMult       = input.float(1.5, "ATR Stop-Loss x",             group = "⚠️ Risk Management", minval = 0.5, step = 0.1)
 
 // 🎨 Visual
-showRegime     = input.bool(true,  "Mostrar fondo régimen",   group = "🎨 Visual")
-showTable      = input.bool(true,  "Mostrar tabla scoring",   group = "🎨 Visual")
-showSL         = input.bool(true,  "Mostrar Stop-Loss",       group = "🎨 Visual")
-tablePosInput  = input.string("Top Right", "Posicion tabla",
+showRegime      = input.bool(true,  "Mostrar fondo régimen",      group = "🎨 Visual")
+showTable       = input.bool(true,  "Mostrar tabla scoring",      group = "🎨 Visual")
+showSL          = input.bool(true,  "Mostrar Stop-Loss",          group = "🎨 Visual")
+showDivLine     = input.bool(true,  "Mostrar línea divergencia",  group = "🎨 Visual",
+     tooltip = "ON: dibuja una línea en el gráfico conectando los dos mínimos cuando C7 detecta divergencia.")
+tablePosInput   = input.string("Top Right", "Posicion tabla",
      options = ["Top Right", "Top Left", "Top Center", "Bottom Right", "Bottom Left", "Bottom Center", "Middle Right", "Middle Left"],
      group = "🎨 Visual")
 
@@ -80,19 +90,17 @@ color C_TICKER_BG   = color.new(#0f1923, 0)
 color C_TICKER_TXT  = color.new(#58a6ff, 0)
 color C_OBLIG_BG    = color.new(#1a2d1a, 0)
 color C_C6_BG       = color.new(#1a1f2d, 0)
-color C_STF_BG      = color.new(#1f1a2d, 0)   // púrpura muy oscuro — fila TF superior
+color C_STF_BG      = color.new(#1f1a2d, 0)
+color C_C7_BG       = color.new(#1a2020, 0)   // verde muy oscuro — fila C7
 
-// ─── HELPERS ─────────────────────────────────────────────────
-// Resuelve el TF superior según el TF actual del gráfico
+// ─── HELPER: TF SUPERIOR ─────────────────────────────────────
 f_superTF() =>
     if timeframe.isweekly or timeframe.ismonthly
         "M"
     else
-        "W"   // Daily -> Weekly por defecto
+        "W"
 
 // ─── CONDICIÓN 1: RÉGIMEN BROAD MARKET (SPY + QQQ) ───────────
-// Anti-repainting: close[1] + lookahead_on
-
 [spyClose, spyEma] = request.security("AMEX:SPY", timeframe.period,
      [close[1], ta.ema(close, spyEmaLen)[1]], lookahead = barmerge.lookahead_on)
 
@@ -103,11 +111,7 @@ bool spyBull   = spyClose > spyEma
 bool qqqBull   = qqqClose > qqqEma
 bool c1_regime = spyBull and qqqBull
 
-// ─── C1 DOBLE TIMEFRAME (TF SUPERIOR) ────────────────────────
-// Verifica el mismo check SPY+QQQ en el TF superior al del gráfico.
-// Solo activo cuando useSuperTF = true.
-// Anti-repainting igual que C1 base.
-
+// ─── C1b: DOBLE TIMEFRAME ────────────────────────────────────
 string superTF = f_superTF()
 
 [spyCloseSup, spyEmaSup] = request.security("AMEX:SPY", superTF,
@@ -118,27 +122,18 @@ string superTF = f_superTF()
 
 bool spyBullSup  = spyCloseSup > spyEmaSup
 bool qqqBullSup  = qqqCloseSup > qqqEmaSup
-bool c1_superTF  = spyBullSup and qqqBullSup   // régimen en TF superior
-
-// Gate del TF superior: solo aplica si useSuperTF está ON
+bool c1_superTF  = spyBullSup and qqqBullSup
 bool superTFGate = not useSuperTF or (superTFRequired ? c1_superTF : true)
 
 // ─── CONDICIÓN 2: PULLBACK CON CONTEXTO DE TENDENCIA ─────────
-// MEJORADO en v4: el precio debe haber estado N barras consecutivas
-// por encima de la EMA rápida antes del toque actual.
-// Esto filtra pullbacks en rangos laterales donde no hay tendencia previa.
-
 float emaFast = ta.ema(close, emaFastLen)
 float emaSlow = ta.ema(close, emaSlowLen)
 
-// Cuenta cuántas de las últimas N barras cerraron sobre la EMA rápida
 int barsAboveEma = 0
 for i = 1 to c2TrendBars
     if close[i] > emaFast[i]
         barsAboveEma += 1
 
-// C2 pasa si: todas N barras previas sobre EMA (tendencia previa confirmada)
-// Y el low actual toca la EMA (pullback real) con cierre no rompiendo EMA lenta
 bool c2_priorTrend = barsAboveEma >= c2TrendBars
 bool c2_touchEma   = low <= emaFast and close >= emaSlow * 0.98
 bool c2_dip        = c2_priorTrend and c2_touchEma
@@ -171,21 +166,61 @@ bool c6_trend     = c6a_above50 and c6b_above200 and c6c_golden
 float distSma50  = (close - sma50)  / sma50  * 100
 float distSma200 = (close - sma200) / sma200 * 100
 
+// ─── CONDICIÓN 7: DIVERGENCIA ALCISTA RSI ─────────────────────
+// Divergencia alcista clásica:
+//   precio hace un mínimo MÁS BAJO que N barras atrás   (LL — lower low)
+//   RSI    hace un mínimo MÁS ALTO que N barras atrás   (HL — higher low)
+// Esto indica que el momentum de bajada se está agotando
+// mientras el precio sigue cayendo — señal de reversión.
+//
+// Implementación:
+//   prevLow  = mínimo de precio en la ventana [1 .. c7Lookback]
+//   prevRSI  = mínimo de RSI    en la ventana [1 .. c7Lookback]
+//   c7 pasa si: low < prevLow  AND  rsiVal > prevRSI
+
+float rsiForDiv = ta.rsi(close, rsiLen)   // mismo RSI que C3
+
+// Mínimos de precio y RSI en la ventana histórica
+float prevLowPrice = ta.lowest(low,       c7Lookback + 1)  // incluye la barra actual
+float prevLowRsi   = ta.lowest(rsiForDiv, c7Lookback + 1)
+
+// Mínimo excluyendo la barra actual: usar offset [1] en ta.lowest con lookback
+float priorLow  = ta.lowest(low[1],        c7Lookback)
+float priorRsi  = ta.lowest(rsiForDiv[1],  c7Lookback)
+
+// Divergencia: precio marca LL pero RSI no lo confirma (HL)
+bool c7_priceLL = low  < priorLow   // precio hace mínimo más bajo
+bool c7_rsiHL   = rsiForDiv > priorRsi  // RSI hace mínimo más alto (diverge)
+bool c7_divRaw  = c7_priceLL and c7_rsiHL
+
+// Solo se activa si useC7 está ON
+bool c7_div     = useC7 and c7_divRaw
+bool c7Gate     = not useC7 or not c7Required or c7_div
+
+// Diferencia RSI para mostrar en tabla (positivo = divergencia real)
+float c7RsiDiff = rsiForDiv - priorRsi   // > 0 confirma HL en RSI
+
 // ─── SCORING ──────────────────────────────────────────────────
-// Condiciones obligatorias: C1 siempre. C6 y TF superior si sus inputs lo dictan.
-// Score técnico base: C2-C6 = 0 a 5 puntos.
-// TF superior en modo puntuado: suma 1 punto adicional (max 6).
+// Base: C2-C6 = 0-5 puntos
+// TF superior puntuado: +1 (max +6)
+// C7 puntuada: +1 adicional
+// C7 obligatoria: gate adicional (no suma puntos extra)
 
-int scoreBase = (c2_dip ? 1 : 0) + (c3_rsi ? 1 : 0) + (c4_rvol ? 1 : 0) + (c5_candle ? 1 : 0) + (c6_trend ? 1 : 0)
+int scoreBase    = (c2_dip ? 1 : 0) + (c3_rsi ? 1 : 0) + (c4_rvol ? 1 : 0) + (c5_candle ? 1 : 0) + (c6_trend ? 1 : 0)
 int scoreSuperTF = (useSuperTF and not superTFRequired and c1_superTF) ? 1 : 0
-int score     = scoreBase + scoreSuperTF
-int scoreMax  = useSuperTF and not superTFRequired ? 6 : 5
+int scoreC7      = (useC7 and not c7Required and c7_div) ? 1 : 0
+int score        = scoreBase + scoreSuperTF + scoreC7
 
-bool c6Gate      = c6Required ? c6_trend : true
-bool fullSignal  = c1_regime and superTFGate and c6Gate and score >= (scoreMax - 1)
-bool partialSignal = c1_regime and superTFGate and c6Gate and score == (scoreMax - 2)
+// scoreMax dinámico según qué condiciones están en modo puntuado
+int scoreMax     = 5 +
+     (useSuperTF and not superTFRequired ? 1 : 0) +
+     (useC7      and not c7Required      ? 1 : 0)
 
-// ─── STOP LOSS SUGERIDO ───────────────────────────────────────
+bool c6Gate        = c6Required ? c6_trend : true
+bool fullSignal    = c1_regime and superTFGate and c6Gate and c7Gate and score >= (scoreMax - 1)
+bool partialSignal = c1_regime and superTFGate and c6Gate and c7Gate and score == (scoreMax - 2)
+
+// ─── STOP LOSS ────────────────────────────────────────────────
 float atrVal  = ta.atr(atrLen)
 float slLevel = low - atrSlMult * atrVal
 float slPct   = (close - slLevel) / close * 100
@@ -201,6 +236,16 @@ plot(emaSlow, "EMA Lenta",  color.new(color.orange, 0), 2)
 plot(sma50,   "SMA 50",     color.new(color.purple, 0), 1)
 plot(sma200,  "SMA 200",    color.new(color.yellow, 0), 2)
 
+// Línea de divergencia: conecta el mínimo previo con el mínimo actual
+var line divLine = na
+if useC7 and showDivLine and c7_divRaw
+    if not na(divLine)
+        line.delete(divLine)
+    divLine := line.new(
+         bar_index - c7Lookback, priorLow,
+         bar_index,              low,
+         color = color.new(color.lime, 20), width = 1, style = line.style_dashed)
+
 var line slLine = na
 if fullSignal
     if not na(slLine)
@@ -213,10 +258,15 @@ f_badge(bool cond)    => cond ? "OK  PASS" : "X   FAIL"
 f_badgeBg(bool cond)  => cond ? C_PASS_BG  : C_FAIL_BG
 f_badgeTxt(bool cond) => cond ? C_PASS_TXT : C_FAIL_TXT
 
-// ─── TABLA — 4 columnas x 13 filas ───────────────────────────
-// Fila extra para TF superior (C1b) cuando useSuperTF = ON
+// ─── TABLA — 4 columnas x 15 filas ───────────────────────────
+// +1 fila para C7 vs v4 (14 filas v4 -> 15 filas v5)
+// Estructura:
+//   0: cabecera   1: ticker    2: C1    3: C1b
+//   4: C2+        5: C3        6: C4    7: C5
+//   8: C6         9: C7       10: score 11: resultado
+//  12: cfg       13: version
 
-var table t = table.new(tablePos, 4, 13,
+var table t = table.new(tablePos, 4, 14,
      border_color = color.new(color.black, 0), border_width = 1,
      frame_color  = color.new(color.black, 0), frame_width  = 2)
 
@@ -228,109 +278,125 @@ if showTable and barstate.islast
     table.cell(t, 2, 0, "VALOR",          text_color = C_HEADER_TXT, text_size = size.small, bgcolor = C_HEADER_BG)
     table.cell(t, 3, 0, "STATUS",         text_color = C_HEADER_TXT, text_size = size.small, bgcolor = C_HEADER_BG)
 
-    // Fila 1 — Ticker + TF
+    // Fila 1 — Ticker
     table.cell(t, 0, 1, syminfo.ticker,   text_color = C_TICKER_TXT, text_size = size.small, bgcolor = C_TICKER_BG, text_halign = text.align_left)
     table.cell(t, 1, 1, "TF: " + timeframe.period, text_color = C_TICKER_TXT, text_size = size.small, bgcolor = C_TICKER_BG)
     table.cell(t, 2, 1, "SPY " + (spyBull ? "OK" : "X") + "  QQQ " + (qqqBull ? "OK" : "X"),
          text_color = c1_regime ? color.new(#4caf50, 0) : color.new(#f44336, 0), text_size = size.tiny, bgcolor = C_TICKER_BG)
     table.cell(t, 3, 1, "", bgcolor = C_TICKER_BG)
 
-    // Fila 2 — C1 Régimen base (obligatoria)
-    table.cell(t, 0, 2, "C1 Regimen",     text_color = C_LABEL_TXT,  text_size = size.small, bgcolor = C_OBLIG_BG, text_halign = text.align_left)
+    // Fila 2 — C1 Régimen (obligatoria)
+    table.cell(t, 0, 2, "C1 Regimen",    text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_OBLIG_BG, text_halign = text.align_left)
     table.cell(t, 1, 2, "SPY+QQQ > EMA " + str.tostring(spyEmaLen), text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_OBLIG_BG)
-    table.cell(t, 2, 2, "OBLIGATORIA",    text_color = color.new(#c9d1d9, 50), text_size = size.tiny, bgcolor = C_OBLIG_BG)
+    table.cell(t, 2, 2, "OBLIGATORIA",   text_color = color.new(#c9d1d9, 50), text_size = size.tiny, bgcolor = C_OBLIG_BG)
     table.cell(t, 3, 2, f_badge(c1_regime), text_color = f_badgeTxt(c1_regime), text_size = size.small, bgcolor = f_badgeBg(c1_regime))
 
-    // Fila 3 — C1b TF Superior (solo visible si useSuperTF ON)
-    string c1bLabel = useSuperTF ? "C1b TF " + superTF : "C1b TF sup"
-    string c1bDesc  = useSuperTF ? "SPY+QQQ > EMA en " + superTF : "Desactivado"
-    string c1bMode  = useSuperTF ? (superTFRequired ? "OBLIGATORIA" : "PUNTUADA +1") : "OFF"
-    string c1bVal   = useSuperTF ? "SPY " + (spyBullSup ? "OK" : "X") + "  QQQ " + (qqqBullSup ? "OK" : "X") : "—"
-    color  c1bRowBg = useSuperTF ? C_STF_BG : color.new(#0d1117, 60)
+    // Fila 3 — C1b TF Superior
+    string c1bLabel  = useSuperTF ? "C1b TF " + superTF : "C1b TF sup"
+    string c1bDesc   = useSuperTF ? "SPY+QQQ > EMA en " + superTF : "Desactivado"
+    string c1bMode   = useSuperTF ? (superTFRequired ? "OBLIGATORIA" : "PUNTUADA +1") : "OFF"
+    color  c1bRowBg  = useSuperTF ? C_STF_BG : color.new(#0d1117, 60)
     color  c1bTxtClr = useSuperTF ? C_LABEL_TXT : color.new(#c9d1d9, 70)
-    table.cell(t, 0, 3, c1bLabel,         text_color = c1bTxtClr, text_size = size.small, bgcolor = c1bRowBg, text_halign = text.align_left)
-    table.cell(t, 1, 3, c1bDesc,          text_color = c1bTxtClr, text_size = size.small, bgcolor = c1bRowBg)
-    table.cell(t, 2, 3, c1bMode,          text_color = color.new(#c9d1d9, 50), text_size = size.tiny, bgcolor = c1bRowBg)
+    table.cell(t, 0, 3, c1bLabel,        text_color = c1bTxtClr, text_size = size.small, bgcolor = c1bRowBg, text_halign = text.align_left)
+    table.cell(t, 1, 3, c1bDesc,         text_color = c1bTxtClr, text_size = size.small, bgcolor = c1bRowBg)
+    table.cell(t, 2, 3, c1bMode,         text_color = color.new(#c9d1d9, 50), text_size = size.tiny, bgcolor = c1bRowBg)
     table.cell(t, 3, 3, useSuperTF ? f_badge(c1_superTF) : "—",
          text_color = useSuperTF ? f_badgeTxt(c1_superTF) : color.new(#c9d1d9, 70),
-         text_size = size.small,
-         bgcolor = useSuperTF ? f_badgeBg(c1_superTF) : c1bRowBg)
+         text_size = size.small, bgcolor = useSuperTF ? f_badgeBg(c1_superTF) : c1bRowBg)
 
-    // Fila 4 — C2 Pullback mejorado
+    // Fila 4 — C2 Pullback+
     string c2TrendStr = str.tostring(barsAboveEma) + "/" + str.tostring(c2TrendBars) + " barras OK"
     string c2Val      = c2_priorTrend ? c2TrendStr + "  Low " + str.tostring(low, "#.##") : c2TrendStr + " (sin tendencia previa)"
-    table.cell(t, 0, 4, "C2 Dip+",       text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG, text_halign = text.align_left)
+    table.cell(t, 0, 4, "C2 Dip+",      text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG, text_halign = text.align_left)
     table.cell(t, 1, 4, "Trend " + str.tostring(c2TrendBars) + "b + Low<=EMA" + str.tostring(emaFastLen), text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG)
-    table.cell(t, 2, 4, c2Val,           text_color = c2_priorTrend ? C_VALUE_TXT : color.new(#f44336, 40), text_size = size.tiny, bgcolor = C_ROW_BG)
+    table.cell(t, 2, 4, c2Val,          text_color = c2_priorTrend ? C_VALUE_TXT : color.new(#f44336, 40), text_size = size.tiny, bgcolor = C_ROW_BG)
     table.cell(t, 3, 4, f_badge(c2_dip), text_color = f_badgeTxt(c2_dip), text_size = size.small, bgcolor = f_badgeBg(c2_dip))
 
     // Fila 5 — C3 RSI
     string c3Val = "RSI " + str.tostring(rsiVal, "#.#") + "  RSI2 " + str.tostring(rsi2Val, "#.#")
-    table.cell(t, 0, 5, "C3 RSI",        text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_ALT_BG, text_halign = text.align_left)
+    table.cell(t, 0, 5, "C3 RSI",       text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_ALT_BG, text_halign = text.align_left)
     table.cell(t, 1, 5, "RSI<" + str.tostring(rsiOB) + " | RSI2<" + str.tostring(rsi2OB, "#"), text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_ALT_BG)
-    table.cell(t, 2, 5, c3Val,           text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_ROW_ALT_BG)
+    table.cell(t, 2, 5, c3Val,          text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_ROW_ALT_BG)
     table.cell(t, 3, 5, f_badge(c3_rsi), text_color = f_badgeTxt(c3_rsi), text_size = size.small, bgcolor = f_badgeBg(c3_rsi))
 
     // Fila 6 — C4 RVOL
     string c4Val = str.tostring(rvolRatio, "#.##") + "x avg"
-    table.cell(t, 0, 6, "C4 RVOL",       text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG, text_halign = text.align_left)
+    table.cell(t, 0, 6, "C4 RVOL",      text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG, text_halign = text.align_left)
     table.cell(t, 1, 6, "Vol > " + str.tostring(rvolMult, "#.#") + "x avg", text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG)
-    table.cell(t, 2, 6, c4Val,           text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_ROW_BG)
+    table.cell(t, 2, 6, c4Val,          text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_ROW_BG)
     table.cell(t, 3, 6, f_badge(c4_rvol), text_color = f_badgeTxt(c4_rvol), text_size = size.small, bgcolor = f_badgeBg(c4_rvol))
 
     // Fila 7 — C5 Hammer
     string c5Val = "Wick " + str.tostring(lowerW / math.max(body, 0.0001), "#.#") + "x body"
-    table.cell(t, 0, 7, "C5 Hammer",     text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_ALT_BG, text_halign = text.align_left)
+    table.cell(t, 0, 7, "C5 Hammer",    text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_ALT_BG, text_halign = text.align_left)
     table.cell(t, 1, 7, "Wick >= 2x Body", text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_ALT_BG)
-    table.cell(t, 2, 7, c5Val,           text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_ROW_ALT_BG)
+    table.cell(t, 2, 7, c5Val,          text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_ROW_ALT_BG)
     table.cell(t, 3, 7, f_badge(c5_candle), text_color = f_badgeTxt(c5_candle), text_size = size.small, bgcolor = f_badgeBg(c5_candle))
 
     // Fila 8 — C6 Tendencia
     string c6Label  = c6Required ? "C6 Tendencia*" : "C6 Tendencia"
     string c6Checks = (c6a_above50 ? "OK" : "X") + ">50  " + (c6b_above200 ? "OK" : "X") + ">200  GX:" + (c6c_golden ? "OK" : "X")
     string c6Val    = "D50 " + str.tostring(distSma50, "+#.#;-#.#") + "%  D200 " + str.tostring(distSma200, "+#.#;-#.#") + "%"
-    table.cell(t, 0, 8, c6Label,         text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_C6_BG, text_halign = text.align_left)
-    table.cell(t, 1, 8, c6Checks,        text_color = c6_trend ? color.new(#4caf50, 0) : color.new(#f44336, 0), text_size = size.tiny, bgcolor = C_C6_BG)
-    table.cell(t, 2, 8, c6Val,           text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_C6_BG)
+    table.cell(t, 0, 8, c6Label,        text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_C6_BG, text_halign = text.align_left)
+    table.cell(t, 1, 8, c6Checks,       text_color = c6_trend ? color.new(#4caf50, 0) : color.new(#f44336, 0), text_size = size.tiny, bgcolor = C_C6_BG)
+    table.cell(t, 2, 8, c6Val,          text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_C6_BG)
     table.cell(t, 3, 8, f_badge(c6_trend), text_color = f_badgeTxt(c6_trend), text_size = size.small, bgcolor = f_badgeBg(c6_trend))
 
-    // Fila 9 — Score + SL
+    // Fila 9 — C7 Divergencia RSI (nueva en v5)
+    string c7Label   = not useC7 ? "C7 Div RSI" : c7Required ? "C7 Div RSI*" : "C7 Div RSI"
+    string c7Mode    = not useC7 ? "OFF" : c7Required ? "OBLIGATORIA" : "PUNTUADA +1"
+    string c7Checks  = not useC7 ? "Desactivado" :
+         (c7_priceLL ? "LL OK" : "LL X") + "  " + (c7_rsiHL ? "HL OK" : "HL X")
+    string c7ValStr  = not useC7 ? "—" :
+         "RSIdiff " + str.tostring(c7RsiDiff, "+#.#;-#.#") + "  LB:" + str.tostring(c7Lookback) + "b"
+    color  c7RowBg   = useC7 ? C_C7_BG : color.new(#0d1117, 60)
+    color  c7TxtClr  = useC7 ? C_LABEL_TXT : color.new(#c9d1d9, 70)
+    table.cell(t, 0, 9, c7Label,        text_color = c7TxtClr, text_size = size.small, bgcolor = c7RowBg, text_halign = text.align_left)
+    table.cell(t, 1, 9, c7Checks,       text_color = useC7 ? (c7_divRaw ? color.new(#4caf50, 0) : color.new(#f44336, 0)) : color.new(#c9d1d9, 70), text_size = size.tiny, bgcolor = c7RowBg)
+    table.cell(t, 2, 9, c7ValStr,       text_color = useC7 ? C_VALUE_TXT : color.new(#c9d1d9, 70), text_size = size.tiny, bgcolor = c7RowBg)
+    table.cell(t, 3, 9, useC7 ? f_badge(c7_div) : "—",
+         text_color = useC7 ? f_badgeTxt(c7_div) : color.new(#c9d1d9, 70),
+         text_size = size.small, bgcolor = useC7 ? f_badgeBg(c7_div) : c7RowBg)
+
+    // Fila 10 — Score + SL
     color  scoreBg = fullSignal ? C_READY_BG : partialSignal ? C_WARN_BG : color.new(#1a1a2e, 0)
     string slStr   = "SL " + str.tostring(slLevel, "#.##") + "  (-" + str.tostring(slPct, "#.#") + "%)"
-    table.cell(t, 0, 9, "SCORE",         text_color = color.white, text_size = size.small, bgcolor = scoreBg)
-    table.cell(t, 1, 9, str.tostring(score) + "/" + str.tostring(scoreMax) + " tecnicas", text_color = color.white, text_size = size.small, bgcolor = scoreBg)
-    table.cell(t, 2, 9, slStr,           text_color = color.new(#ffcdd2, 0), text_size = size.tiny, bgcolor = scoreBg)
-    table.cell(t, 3, 9, "",              bgcolor = scoreBg)
+    table.cell(t, 0, 10, "SCORE",       text_color = color.white, text_size = size.small, bgcolor = scoreBg)
+    table.cell(t, 1, 10, str.tostring(score) + "/" + str.tostring(scoreMax) + " tecnicas", text_color = color.white, text_size = size.small, bgcolor = scoreBg)
+    table.cell(t, 2, 10, slStr,         text_color = color.new(#ffcdd2, 0), text_size = size.tiny, bgcolor = scoreBg)
+    table.cell(t, 3, 10, "",            bgcolor = scoreBg)
 
-    // Fila 10 — Resultado final
+    // Fila 11 — Resultado final
     string resultTxt = fullSignal    ? "READY ("     + str.tostring(score) + "/" + str.tostring(scoreMax) + ")" :
                        partialSignal ? "WATCH ("     + str.tostring(score) + "/" + str.tostring(scoreMax) + ")" :
                                        "NOT READY (" + str.tostring(score) + "/" + str.tostring(scoreMax) + ")"
     color  resultBg  = fullSignal ? C_READY_BG : partialSignal ? C_WARN_BG : C_NOTREADY_BG
-    table.merge_cells(t, 0, 10, 3, 10)
-    table.cell(t, 0, 10, resultTxt,      text_color = color.white, text_size = size.normal, bgcolor = resultBg)
+    table.merge_cells(t, 0, 11, 3, 11)
+    table.cell(t, 0, 11, resultTxt,     text_color = color.white, text_size = size.normal, bgcolor = resultBg)
 
-    // Fila 11 — Inputs activos (resumen rápido de configuración)
+    // Fila 12 — Config activa
     string cfgStr = "C2:" + str.tostring(c2TrendBars) + "b  " +
          "C6:" + (c6Required ? "OBLIG" : "punt") + "  " +
-         "TFsup:" + (useSuperTF ? (superTFRequired ? "OBLIG" : "punt") : "OFF")
-    table.merge_cells(t, 0, 11, 3, 11)
-    table.cell(t, 0, 11, cfgStr,         text_color = color.new(#58a6ff, 30), text_size = size.tiny, bgcolor = color.new(#0d1117, 0))
-
-    // Fila 12 — Versión
-    string verStr = "Ovtlier Plan A v4  " + str.tostring(year) + "-" + str.tostring(month, "00") + "-" + str.tostring(dayofmonth, "00")
+         "TFsup:" + (useSuperTF ? (superTFRequired ? "OBLIG" : "punt") : "OFF") + "  " +
+         "C7:" + (not useC7 ? "OFF" : c7Required ? "OBLIG" : "punt") + " " + str.tostring(c7Lookback) + "b"
     table.merge_cells(t, 0, 12, 3, 12)
-    table.cell(t, 0, 12, verStr,         text_color = color.new(#c9d1d9, 60), text_size = size.tiny, bgcolor = C_HEADER_BG)
+    table.cell(t, 0, 12, cfgStr,        text_color = color.new(#58a6ff, 30), text_size = size.tiny, bgcolor = color.new(#0d1117, 0))
+
+    // Fila 13 — Versión
+    string verStr = "Ovtlier Plan A v5  " + str.tostring(year) + "-" + str.tostring(month, "00") + "-" + str.tostring(dayofmonth, "00")
+    table.merge_cells(t, 0, 13, 3, 13)
+    table.cell(t, 0, 13, verStr,        text_color = color.new(#c9d1d9, 60), text_size = size.tiny, bgcolor = C_HEADER_BG)
 
 // ─── ALERTAS ──────────────────────────────────────────────────
 string alertBase = syminfo.ticker + " | TF: " + timeframe.period +
-     " | Close: " + str.tostring(close, "#.##") +
-     " | SL: "    + str.tostring(slLevel, "#.##") +
-     " | SL%: -"  + str.tostring(slPct, "#.#") + "%" +
-     " | Score: " + str.tostring(score) + "/" + str.tostring(scoreMax) +
+     " | Close: "  + str.tostring(close, "#.##") +
+     " | SL: "     + str.tostring(slLevel, "#.##") +
+     " | SL%: -"   + str.tostring(slPct, "#.#") + "%" +
+     " | Score: "  + str.tostring(score) + "/" + str.tostring(scoreMax) +
      " | C2bars: " + str.tostring(barsAboveEma) + "/" + str.tostring(c2TrendBars) +
-     " | C6: "    + (c6_trend ? "OK" : "FAIL") +
-     " | TFsup: " + (useSuperTF ? (c1_superTF ? "OK" : "FAIL") : "OFF")
+     " | C6: "     + (c6_trend ? "OK" : "FAIL") +
+     " | TFsup: "  + (useSuperTF ? (c1_superTF ? "OK" : "FAIL") : "OFF") +
+     " | C7div: "  + (useC7 ? (c7_div ? "OK" : "FAIL") : "OFF")
 
 if fullSignal
     alert("PLAN A READY | " + alertBase, alert.freq_once_per_bar_close)
