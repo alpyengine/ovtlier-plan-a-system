@@ -1,12 +1,13 @@
 // ═══════════════════════════════════════════════════════════════
-// © Ovtlier University | Plan A Swing Indicator v5
+// © Ovtlier University | Plan A Swing Indicator v5.1
 // Basado en la metodología de Christopher Uhl
 // Temporalidades: Daily (D) y Weekly (W)
-// v5: C7 — Divergencia alcista RSI (condición bonus opcional)
-//     Precio: mínimo más bajo | RSI: mínimo más alto
+// v5.1: Paleta clara (misma que Market Dashboard v5.2)
+//       Tamaño de texto configurable desde inputs
+//       Sin cambios en lógica de negocio ni request.security()
 // ═══════════════════════════════════════════════════════════════
 //@version=6
-indicator("Ovtlier Plan A - Swing v5", overlay = true, max_bars_back = 500)
+indicator("Ovtlier Plan A - Swing v5.1", overlay = true, max_bars_back = 500)
 
 // ─── INPUTS ───────────────────────────────────────────────────
 
@@ -38,7 +39,7 @@ sma200Len       = input.int(200,   "SMA Larga (defecto 200)",     group = "📈 
 c6Required      = input.bool(false, "C6 obligatoria (además de C1)", group = "📈 Filtro Tendencia C6",
      tooltip = "ON: sin tendencia alcista del activo no hay señal aunque C1 pase.\nOFF: C6 suma al score.")
 
-// 📉 Divergencia RSI — C7 (nuevo en v5)
+// 📉 Divergencia RSI — C7
 useC7           = input.bool(true,  "Activar C7 Divergencia RSI", group = "📉 Divergencia RSI C7",
      tooltip = "ON: busca divergencia alcista entre precio (LL) y RSI (HL) en la ventana definida.\nOFF: C7 no aparece en tabla ni afecta al score.")
 c7Lookback      = input.int(5,     "C7 Ventana barras (lookback)", group = "📉 Divergencia RSI C7", minval = 2, maxval = 20,
@@ -56,9 +57,29 @@ showTable       = input.bool(true,  "Mostrar tabla scoring",      group = "🎨 
 showSL          = input.bool(true,  "Mostrar Stop-Loss",          group = "🎨 Visual")
 showDivLine     = input.bool(true,  "Mostrar línea divergencia",  group = "🎨 Visual",
      tooltip = "ON: dibuja una línea en el gráfico conectando los dos mínimos cuando C7 detecta divergencia.")
+tamPanelInput   = input.string("small", "Tamaño de texto",
+     options = ["tiny", "small", "normal", "large"], group = "🎨 Visual")
 tablePosInput   = input.string("Top Right", "Posicion tabla",
      options = ["Top Right", "Top Left", "Top Center", "Bottom Right", "Bottom Left", "Bottom Center", "Middle Right", "Middle Left"],
      group = "🎨 Visual")
+
+// ─── TAMAÑO DE TEXTO ─────────────────────────────────────────
+// Resuelve el string del input a la constante size.*
+// Se usa TS (text size) en todas las celdas de la tabla.
+TS = switch tamPanelInput
+    "tiny"   => size.tiny
+    "small"  => size.small
+    "normal" => size.normal
+    "large"  => size.large
+    => size.small
+
+// Una escala por debajo para celdas secundarias (VALOR, modo, versión)
+TS_SM = switch tamPanelInput
+    "tiny"   => size.tiny
+    "small"  => size.tiny
+    "normal" => size.small
+    "large"  => size.small
+    => size.tiny
 
 // ─── POSICIÓN DE TABLA ────────────────────────────────────────
 tablePos = switch tablePosInput
@@ -72,26 +93,41 @@ tablePos = switch tablePosInput
     "Middle Left"   => position.middle_left
     => position.top_right
 
-// ─── PALETA DE COLORES ────────────────────────────────────────
-color C_HEADER_BG   = color.new(#1a2433, 0)
-color C_HEADER_TXT  = color.white
-color C_ROW_BG      = color.new(#0d1117, 0)
-color C_ROW_ALT_BG  = color.new(#141c26, 0)
-color C_LABEL_TXT   = color.new(#c9d1d9, 0)
-color C_VALUE_TXT   = color.new(#58a6ff, 0)
-color C_PASS_BG     = color.new(#1a6b3c, 0)
-color C_PASS_TXT    = color.white
-color C_FAIL_BG     = color.new(#8b1a1a, 0)
-color C_FAIL_TXT    = color.white
-color C_WARN_BG     = color.new(#7a5c00, 0)
-color C_READY_BG    = color.new(#0d5c2e, 0)
-color C_NOTREADY_BG = color.new(#6b0f0f, 0)
-color C_TICKER_BG   = color.new(#0f1923, 0)
-color C_TICKER_TXT  = color.new(#58a6ff, 0)
-color C_OBLIG_BG    = color.new(#1a2d1a, 0)
-color C_C6_BG       = color.new(#1a1f2d, 0)
-color C_STF_BG      = color.new(#1f1a2d, 0)
-color C_C7_BG       = color.new(#1a2020, 0)   // verde muy oscuro — fila C7
+// ─── PALETA CLARA — misma que Market Dashboard v5.2 ──────────
+// Fondos
+color C_HEADER_BG   = color.new(#eef0f6, 0)   // th-bg
+color C_ROW_BG      = color.new(#ffffff, 0)   // surface
+color C_ROW_ALT_BG  = color.new(#f4f5f8, 0)   // surface2
+color C_TICKER_BG   = color.new(#eef0f6, 0)   // mismo que header
+color C_OBLIG_BG    = color.new(#f0fdf4, 0)   // verde pálido — C1 obligatoria
+color C_C6_BG       = color.new(#eff6ff, 0)   // azul pálido  — C6 tendencia
+color C_STF_BG      = color.new(#f5f3ff, 0)   // lila pálido  — C1b TF superior
+color C_C7_BG       = color.new(#f0fdfa, 0)   // teal pálido  — C7 divergencia
+
+// Textos principales
+color C_HEADER_TXT  = color.new(#374151, 0)   // th-text
+color C_LABEL_TXT   = color.new(#1a1f2e, 0)   // text
+color C_VALUE_TXT   = color.new(#4b5563, 0)   // text2
+color C_TICKER_TXT  = color.new(#1d4ed8, 0)   // blue destacado
+
+// Badges PASS
+color C_PASS_BG     = color.new(#dcfce7, 0)   // tag-green-bg
+color C_PASS_TXT    = color.new(#14532d, 0)   // tag-green-text
+
+// Badges FAIL
+color C_FAIL_BG     = color.new(#fee2e2, 0)
+color C_FAIL_TXT    = color.new(#991b1b, 0)
+
+// Score / resultado
+color C_WARN_BG     = color.new(#fef3c7, 0)   // ambar claro — WATCH
+color C_WARN_TXT    = color.new(#b45309, 0)   // texto sobre warn
+color C_READY_BG    = color.new(#bbf7d0, 0)   // verde algo más intenso que PASS — READY
+color C_READY_TXT   = color.new(#14532d, 0)
+color C_NOTREADY_BG = color.new(#fecaca, 0)   // rojo algo más intenso — NOT READY
+color C_NOTREADY_TXT = color.new(#991b1b, 0)
+
+// Texto atenuado para filas desactivadas / modo OFF
+color C_DIM_TXT     = color.new(#9ca3af, 0)
 
 // ─── HELPER: TF SUPERIOR ─────────────────────────────────────
 f_superTF() =>
@@ -101,6 +137,7 @@ f_superTF() =>
         "W"
 
 // ─── CONDICIÓN 1: RÉGIMEN BROAD MARKET (SPY + QQQ) ───────────
+// Sin cambios — anti-repainting: close[1] + lookahead_on
 [spyClose, spyEma] = request.security("AMEX:SPY", timeframe.period,
      [close[1], ta.ema(close, spyEmaLen)[1]], lookahead = barmerge.lookahead_on)
 
@@ -167,51 +204,25 @@ float distSma50  = (close - sma50)  / sma50  * 100
 float distSma200 = (close - sma200) / sma200 * 100
 
 // ─── CONDICIÓN 7: DIVERGENCIA ALCISTA RSI ─────────────────────
-// Divergencia alcista clásica:
-//   precio hace un mínimo MÁS BAJO que N barras atrás   (LL — lower low)
-//   RSI    hace un mínimo MÁS ALTO que N barras atrás   (HL — higher low)
-// Esto indica que el momentum de bajada se está agotando
-// mientras el precio sigue cayendo — señal de reversión.
-//
-// Implementación:
-//   prevLow  = mínimo de precio en la ventana [1 .. c7Lookback]
-//   prevRSI  = mínimo de RSI    en la ventana [1 .. c7Lookback]
-//   c7 pasa si: low < prevLow  AND  rsiVal > prevRSI
+float rsiForDiv = ta.rsi(close, rsiLen)
 
-float rsiForDiv = ta.rsi(close, rsiLen)   // mismo RSI que C3
+float priorLow  = ta.lowest(low[1],       c7Lookback)
+float priorRsi  = ta.lowest(rsiForDiv[1], c7Lookback)
 
-// Mínimos de precio y RSI en la ventana histórica
-float prevLowPrice = ta.lowest(low,       c7Lookback + 1)  // incluye la barra actual
-float prevLowRsi   = ta.lowest(rsiForDiv, c7Lookback + 1)
-
-// Mínimo excluyendo la barra actual: usar offset [1] en ta.lowest con lookback
-float priorLow  = ta.lowest(low[1],        c7Lookback)
-float priorRsi  = ta.lowest(rsiForDiv[1],  c7Lookback)
-
-// Divergencia: precio marca LL pero RSI no lo confirma (HL)
-bool c7_priceLL = low  < priorLow   // precio hace mínimo más bajo
-bool c7_rsiHL   = rsiForDiv > priorRsi  // RSI hace mínimo más alto (diverge)
+bool c7_priceLL = low       < priorLow
+bool c7_rsiHL   = rsiForDiv > priorRsi
 bool c7_divRaw  = c7_priceLL and c7_rsiHL
-
-// Solo se activa si useC7 está ON
 bool c7_div     = useC7 and c7_divRaw
 bool c7Gate     = not useC7 or not c7Required or c7_div
 
-// Diferencia RSI para mostrar en tabla (positivo = divergencia real)
-float c7RsiDiff = rsiForDiv - priorRsi   // > 0 confirma HL en RSI
+float c7RsiDiff = rsiForDiv - priorRsi
 
 // ─── SCORING ──────────────────────────────────────────────────
-// Base: C2-C6 = 0-5 puntos
-// TF superior puntuado: +1 (max +6)
-// C7 puntuada: +1 adicional
-// C7 obligatoria: gate adicional (no suma puntos extra)
-
 int scoreBase    = (c2_dip ? 1 : 0) + (c3_rsi ? 1 : 0) + (c4_rvol ? 1 : 0) + (c5_candle ? 1 : 0) + (c6_trend ? 1 : 0)
 int scoreSuperTF = (useSuperTF and not superTFRequired and c1_superTF) ? 1 : 0
 int scoreC7      = (useC7 and not c7Required and c7_div) ? 1 : 0
 int score        = scoreBase + scoreSuperTF + scoreC7
 
-// scoreMax dinámico según qué condiciones están en modo puntuado
 int scoreMax     = 5 +
      (useSuperTF and not superTFRequired ? 1 : 0) +
      (useC7      and not c7Required      ? 1 : 0)
@@ -225,7 +236,7 @@ float atrVal  = ta.atr(atrLen)
 float slLevel = low - atrSlMult * atrVal
 float slPct   = (close - slLevel) / close * 100
 
-// ─── PLOTS ────────────────────────────────────────────────────
+// ─── PLOTS (sin cambios vs v5) ────────────────────────────────
 bgcolor(showRegime and c1_regime ? color.new(color.teal, 93) : na, title = "Fondo regimen")
 
 plotshape(fullSignal,    "Plan A Signal", shape.triangleup, location.belowbar, color.new(color.teal,   0), size = size.normal, text = "A")
@@ -236,7 +247,6 @@ plot(emaSlow, "EMA Lenta",  color.new(color.orange, 0), 2)
 plot(sma50,   "SMA 50",     color.new(color.purple, 0), 1)
 plot(sma200,  "SMA 200",    color.new(color.yellow, 0), 2)
 
-// Línea de divergencia: conecta el mínimo previo con el mínimo actual
 var line divLine = na
 if useC7 and showDivLine and c7_divRaw
     if not na(divLine)
@@ -258,136 +268,127 @@ f_badge(bool cond)    => cond ? "OK  PASS" : "X   FAIL"
 f_badgeBg(bool cond)  => cond ? C_PASS_BG  : C_FAIL_BG
 f_badgeTxt(bool cond) => cond ? C_PASS_TXT : C_FAIL_TXT
 
-// ─── TABLA — 4 columnas x 15 filas ───────────────────────────
-// +1 fila para C7 vs v4 (14 filas v4 -> 15 filas v5)
-// Estructura:
-//   0: cabecera   1: ticker    2: C1    3: C1b
-//   4: C2+        5: C3        6: C4    7: C5
-//   8: C6         9: C7       10: score 11: resultado
-//  12: cfg       13: version
+// ─── TABLA — 4 columnas x 14 filas ───────────────────────────
+// Misma estructura que v5. Solo cambian colores y text_size.
+// Todos los text_size usan TS o TS_SM (resueltos desde tamPanelInput).
+// border/frame en gris claro para paleta clara.
 
 var table t = table.new(tablePos, 4, 14,
-     border_color = color.new(color.black, 0), border_width = 1,
-     frame_color  = color.new(color.black, 0), frame_width  = 2)
+     border_color = color.new(#d1d5db, 0), border_width = 1,
+     frame_color  = color.new(#9ca3af, 0), frame_width  = 2)
 
 if showTable and barstate.islast
 
     // Fila 0 — Cabecera
-    table.cell(t, 0, 0, "OVTLIER PLAN A", text_color = C_HEADER_TXT, text_size = size.small, bgcolor = C_HEADER_BG, text_halign = text.align_left)
-    table.cell(t, 1, 0, "CONDICION",      text_color = C_HEADER_TXT, text_size = size.small, bgcolor = C_HEADER_BG)
-    table.cell(t, 2, 0, "VALOR",          text_color = C_HEADER_TXT, text_size = size.small, bgcolor = C_HEADER_BG)
-    table.cell(t, 3, 0, "STATUS",         text_color = C_HEADER_TXT, text_size = size.small, bgcolor = C_HEADER_BG)
+    table.cell(t, 0, 0, "OVTLIER PLAN A", text_color = C_HEADER_TXT, text_size = TS,    bgcolor = C_HEADER_BG, text_halign = text.align_left)
+    table.cell(t, 1, 0, "CONDICION",      text_color = C_HEADER_TXT, text_size = TS,    bgcolor = C_HEADER_BG)
+    table.cell(t, 2, 0, "VALOR",          text_color = C_HEADER_TXT, text_size = TS,    bgcolor = C_HEADER_BG)
+    table.cell(t, 3, 0, "STATUS",         text_color = C_HEADER_TXT, text_size = TS,    bgcolor = C_HEADER_BG)
 
     // Fila 1 — Ticker
-    table.cell(t, 0, 1, syminfo.ticker,   text_color = C_TICKER_TXT, text_size = size.small, bgcolor = C_TICKER_BG, text_halign = text.align_left)
-    table.cell(t, 1, 1, "TF: " + timeframe.period, text_color = C_TICKER_TXT, text_size = size.small, bgcolor = C_TICKER_BG)
+    table.cell(t, 0, 1, syminfo.ticker,   text_color = C_TICKER_TXT, text_size = TS,    bgcolor = C_TICKER_BG, text_halign = text.align_left)
+    table.cell(t, 1, 1, "TF: " + timeframe.period, text_color = C_TICKER_TXT, text_size = TS, bgcolor = C_TICKER_BG)
     table.cell(t, 2, 1, "SPY " + (spyBull ? "OK" : "X") + "  QQQ " + (qqqBull ? "OK" : "X"),
-         text_color = c1_regime ? color.new(#4caf50, 0) : color.new(#f44336, 0), text_size = size.tiny, bgcolor = C_TICKER_BG)
-    table.cell(t, 3, 1, "", bgcolor = C_TICKER_BG)
+         text_color = c1_regime ? color.new(#15803d, 0) : color.new(#dc2626, 0), text_size = TS_SM, bgcolor = C_TICKER_BG)
+    table.cell(t, 3, 1, "",               bgcolor = C_TICKER_BG)
 
     // Fila 2 — C1 Régimen (obligatoria)
-    table.cell(t, 0, 2, "C1 Regimen",    text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_OBLIG_BG, text_halign = text.align_left)
-    table.cell(t, 1, 2, "SPY+QQQ > EMA " + str.tostring(spyEmaLen), text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_OBLIG_BG)
-    table.cell(t, 2, 2, "OBLIGATORIA",   text_color = color.new(#c9d1d9, 50), text_size = size.tiny, bgcolor = C_OBLIG_BG)
-    table.cell(t, 3, 2, f_badge(c1_regime), text_color = f_badgeTxt(c1_regime), text_size = size.small, bgcolor = f_badgeBg(c1_regime))
+    table.cell(t, 0, 2, "C1 Regimen",    text_color = C_LABEL_TXT,  text_size = TS,    bgcolor = C_OBLIG_BG, text_halign = text.align_left)
+    table.cell(t, 1, 2, "SPY+QQQ > EMA " + str.tostring(spyEmaLen), text_color = C_LABEL_TXT, text_size = TS, bgcolor = C_OBLIG_BG)
+    table.cell(t, 2, 2, "OBLIGATORIA",   text_color = C_DIM_TXT,    text_size = TS_SM, bgcolor = C_OBLIG_BG)
+    table.cell(t, 3, 2, f_badge(c1_regime), text_color = f_badgeTxt(c1_regime), text_size = TS, bgcolor = f_badgeBg(c1_regime))
 
     // Fila 3 — C1b TF Superior
     string c1bLabel  = useSuperTF ? "C1b TF " + superTF : "C1b TF sup"
     string c1bDesc   = useSuperTF ? "SPY+QQQ > EMA en " + superTF : "Desactivado"
     string c1bMode   = useSuperTF ? (superTFRequired ? "OBLIGATORIA" : "PUNTUADA +1") : "OFF"
-    color  c1bRowBg  = useSuperTF ? C_STF_BG : color.new(#0d1117, 60)
-    color  c1bTxtClr = useSuperTF ? C_LABEL_TXT : color.new(#c9d1d9, 70)
-    table.cell(t, 0, 3, c1bLabel,        text_color = c1bTxtClr, text_size = size.small, bgcolor = c1bRowBg, text_halign = text.align_left)
-    table.cell(t, 1, 3, c1bDesc,         text_color = c1bTxtClr, text_size = size.small, bgcolor = c1bRowBg)
-    table.cell(t, 2, 3, c1bMode,         text_color = color.new(#c9d1d9, 50), text_size = size.tiny, bgcolor = c1bRowBg)
+    color  c1bRowBg  = useSuperTF ? C_STF_BG : C_ROW_ALT_BG
+    color  c1bTxtClr = useSuperTF ? C_LABEL_TXT : C_DIM_TXT
+    table.cell(t, 0, 3, c1bLabel,        text_color = c1bTxtClr, text_size = TS,    bgcolor = c1bRowBg, text_halign = text.align_left)
+    table.cell(t, 1, 3, c1bDesc,         text_color = c1bTxtClr, text_size = TS,    bgcolor = c1bRowBg)
+    table.cell(t, 2, 3, c1bMode,         text_color = C_DIM_TXT, text_size = TS_SM, bgcolor = c1bRowBg)
     table.cell(t, 3, 3, useSuperTF ? f_badge(c1_superTF) : "—",
-         text_color = useSuperTF ? f_badgeTxt(c1_superTF) : color.new(#c9d1d9, 70),
-         text_size = size.small, bgcolor = useSuperTF ? f_badgeBg(c1_superTF) : c1bRowBg)
+         text_color = useSuperTF ? f_badgeTxt(c1_superTF) : C_DIM_TXT,
+         text_size = TS, bgcolor = useSuperTF ? f_badgeBg(c1_superTF) : c1bRowBg)
 
     // Fila 4 — C2 Pullback+
     string c2TrendStr = str.tostring(barsAboveEma) + "/" + str.tostring(c2TrendBars) + " barras OK"
     string c2Val      = c2_priorTrend ? c2TrendStr + "  Low " + str.tostring(low, "#.##") : c2TrendStr + " (sin tendencia previa)"
-    table.cell(t, 0, 4, "C2 Dip+",      text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG, text_halign = text.align_left)
-    table.cell(t, 1, 4, "Trend " + str.tostring(c2TrendBars) + "b + Low<=EMA" + str.tostring(emaFastLen), text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG)
-    table.cell(t, 2, 4, c2Val,          text_color = c2_priorTrend ? C_VALUE_TXT : color.new(#f44336, 40), text_size = size.tiny, bgcolor = C_ROW_BG)
-    table.cell(t, 3, 4, f_badge(c2_dip), text_color = f_badgeTxt(c2_dip), text_size = size.small, bgcolor = f_badgeBg(c2_dip))
+    table.cell(t, 0, 4, "C2 Dip+",      text_color = C_LABEL_TXT, text_size = TS,    bgcolor = C_ROW_BG, text_halign = text.align_left)
+    table.cell(t, 1, 4, "Trend " + str.tostring(c2TrendBars) + "b + Low<=EMA" + str.tostring(emaFastLen), text_color = C_LABEL_TXT, text_size = TS, bgcolor = C_ROW_BG)
+    table.cell(t, 2, 4, c2Val,          text_color = c2_priorTrend ? C_VALUE_TXT : color.new(#dc2626, 0), text_size = TS_SM, bgcolor = C_ROW_BG)
+    table.cell(t, 3, 4, f_badge(c2_dip), text_color = f_badgeTxt(c2_dip), text_size = TS, bgcolor = f_badgeBg(c2_dip))
 
     // Fila 5 — C3 RSI
     string c3Val = "RSI " + str.tostring(rsiVal, "#.#") + "  RSI2 " + str.tostring(rsi2Val, "#.#")
-    table.cell(t, 0, 5, "C3 RSI",       text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_ALT_BG, text_halign = text.align_left)
-    table.cell(t, 1, 5, "RSI<" + str.tostring(rsiOB) + " | RSI2<" + str.tostring(rsi2OB, "#"), text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_ALT_BG)
-    table.cell(t, 2, 5, c3Val,          text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_ROW_ALT_BG)
-    table.cell(t, 3, 5, f_badge(c3_rsi), text_color = f_badgeTxt(c3_rsi), text_size = size.small, bgcolor = f_badgeBg(c3_rsi))
+    table.cell(t, 0, 5, "C3 RSI",       text_color = C_LABEL_TXT, text_size = TS,    bgcolor = C_ROW_ALT_BG, text_halign = text.align_left)
+    table.cell(t, 1, 5, "RSI<" + str.tostring(rsiOB) + " | RSI2<" + str.tostring(rsi2OB, "#"), text_color = C_LABEL_TXT, text_size = TS, bgcolor = C_ROW_ALT_BG)
+    table.cell(t, 2, 5, c3Val,          text_color = C_VALUE_TXT, text_size = TS_SM, bgcolor = C_ROW_ALT_BG)
+    table.cell(t, 3, 5, f_badge(c3_rsi), text_color = f_badgeTxt(c3_rsi), text_size = TS, bgcolor = f_badgeBg(c3_rsi))
 
     // Fila 6 — C4 RVOL
     string c4Val = str.tostring(rvolRatio, "#.##") + "x avg"
-    table.cell(t, 0, 6, "C4 RVOL",      text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG, text_halign = text.align_left)
-    table.cell(t, 1, 6, "Vol > " + str.tostring(rvolMult, "#.#") + "x avg", text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_BG)
-    table.cell(t, 2, 6, c4Val,          text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_ROW_BG)
-    table.cell(t, 3, 6, f_badge(c4_rvol), text_color = f_badgeTxt(c4_rvol), text_size = size.small, bgcolor = f_badgeBg(c4_rvol))
+    table.cell(t, 0, 6, "C4 RVOL",      text_color = C_LABEL_TXT, text_size = TS,    bgcolor = C_ROW_BG, text_halign = text.align_left)
+    table.cell(t, 1, 6, "Vol > " + str.tostring(rvolMult, "#.#") + "x avg", text_color = C_LABEL_TXT, text_size = TS, bgcolor = C_ROW_BG)
+    table.cell(t, 2, 6, c4Val,          text_color = C_VALUE_TXT, text_size = TS_SM, bgcolor = C_ROW_BG)
+    table.cell(t, 3, 6, f_badge(c4_rvol), text_color = f_badgeTxt(c4_rvol), text_size = TS, bgcolor = f_badgeBg(c4_rvol))
 
     // Fila 7 — C5 Hammer
     string c5Val = "Wick " + str.tostring(lowerW / math.max(body, 0.0001), "#.#") + "x body"
-    table.cell(t, 0, 7, "C5 Hammer",    text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_ALT_BG, text_halign = text.align_left)
-    table.cell(t, 1, 7, "Wick >= 2x Body", text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_ROW_ALT_BG)
-    table.cell(t, 2, 7, c5Val,          text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_ROW_ALT_BG)
-    table.cell(t, 3, 7, f_badge(c5_candle), text_color = f_badgeTxt(c5_candle), text_size = size.small, bgcolor = f_badgeBg(c5_candle))
+    table.cell(t, 0, 7, "C5 Hammer",    text_color = C_LABEL_TXT, text_size = TS,    bgcolor = C_ROW_ALT_BG, text_halign = text.align_left)
+    table.cell(t, 1, 7, "Wick >= 2x Body", text_color = C_LABEL_TXT, text_size = TS, bgcolor = C_ROW_ALT_BG)
+    table.cell(t, 2, 7, c5Val,          text_color = C_VALUE_TXT, text_size = TS_SM, bgcolor = C_ROW_ALT_BG)
+    table.cell(t, 3, 7, f_badge(c5_candle), text_color = f_badgeTxt(c5_candle), text_size = TS, bgcolor = f_badgeBg(c5_candle))
 
     // Fila 8 — C6 Tendencia
     string c6Label  = c6Required ? "C6 Tendencia*" : "C6 Tendencia"
     string c6Checks = (c6a_above50 ? "OK" : "X") + ">50  " + (c6b_above200 ? "OK" : "X") + ">200  GX:" + (c6c_golden ? "OK" : "X")
     string c6Val    = "D50 " + str.tostring(distSma50, "+#.#;-#.#") + "%  D200 " + str.tostring(distSma200, "+#.#;-#.#") + "%"
-    table.cell(t, 0, 8, c6Label,        text_color = C_LABEL_TXT, text_size = size.small, bgcolor = C_C6_BG, text_halign = text.align_left)
-    table.cell(t, 1, 8, c6Checks,       text_color = c6_trend ? color.new(#4caf50, 0) : color.new(#f44336, 0), text_size = size.tiny, bgcolor = C_C6_BG)
-    table.cell(t, 2, 8, c6Val,          text_color = C_VALUE_TXT, text_size = size.tiny,  bgcolor = C_C6_BG)
-    table.cell(t, 3, 8, f_badge(c6_trend), text_color = f_badgeTxt(c6_trend), text_size = size.small, bgcolor = f_badgeBg(c6_trend))
+    table.cell(t, 0, 8, c6Label,        text_color = C_LABEL_TXT, text_size = TS,    bgcolor = C_C6_BG, text_halign = text.align_left)
+    table.cell(t, 1, 8, c6Checks,       text_color = c6_trend ? color.new(#15803d, 0) : color.new(#dc2626, 0), text_size = TS_SM, bgcolor = C_C6_BG)
+    table.cell(t, 2, 8, c6Val,          text_color = C_VALUE_TXT, text_size = TS_SM, bgcolor = C_C6_BG)
+    table.cell(t, 3, 8, f_badge(c6_trend), text_color = f_badgeTxt(c6_trend), text_size = TS, bgcolor = f_badgeBg(c6_trend))
 
-    // Fila 9 — C7 Divergencia RSI (nueva en v5)
-    string c7Label   = not useC7 ? "C7 Div RSI" : c7Required ? "C7 Div RSI*" : "C7 Div RSI"
-    string c7Mode    = not useC7 ? "OFF" : c7Required ? "OBLIGATORIA" : "PUNTUADA +1"
-    string c7Checks  = not useC7 ? "Desactivado" :
-         (c7_priceLL ? "LL OK" : "LL X") + "  " + (c7_rsiHL ? "HL OK" : "HL X")
-    string c7ValStr  = not useC7 ? "—" :
-         "RSIdiff " + str.tostring(c7RsiDiff, "+#.#;-#.#") + "  LB:" + str.tostring(c7Lookback) + "b"
-    color  c7RowBg   = useC7 ? C_C7_BG : color.new(#0d1117, 60)
-    color  c7TxtClr  = useC7 ? C_LABEL_TXT : color.new(#c9d1d9, 70)
-    table.cell(t, 0, 9, c7Label,        text_color = c7TxtClr, text_size = size.small, bgcolor = c7RowBg, text_halign = text.align_left)
-    table.cell(t, 1, 9, c7Checks,       text_color = useC7 ? (c7_divRaw ? color.new(#4caf50, 0) : color.new(#f44336, 0)) : color.new(#c9d1d9, 70), text_size = size.tiny, bgcolor = c7RowBg)
-    table.cell(t, 2, 9, c7ValStr,       text_color = useC7 ? C_VALUE_TXT : color.new(#c9d1d9, 70), text_size = size.tiny, bgcolor = c7RowBg)
+    // Fila 9 — C7 Divergencia RSI
+    string c7Label  = not useC7 ? "C7 Div RSI" : c7Required ? "C7 Div RSI*" : "C7 Div RSI"
+    string c7Checks = not useC7 ? "Desactivado" : (c7_priceLL ? "LL OK" : "LL X") + "  " + (c7_rsiHL ? "HL OK" : "HL X")
+    string c7ValStr = not useC7 ? "—" : "RSIdiff " + str.tostring(c7RsiDiff, "+#.#;-#.#") + "  LB:" + str.tostring(c7Lookback) + "b"
+    color  c7RowBg  = useC7 ? C_C7_BG : C_ROW_ALT_BG
+    color  c7TxtClr = useC7 ? C_LABEL_TXT : C_DIM_TXT
+    table.cell(t, 0, 9, c7Label,        text_color = c7TxtClr, text_size = TS,    bgcolor = c7RowBg, text_halign = text.align_left)
+    table.cell(t, 1, 9, c7Checks,       text_color = useC7 ? (c7_divRaw ? color.new(#15803d, 0) : color.new(#dc2626, 0)) : C_DIM_TXT, text_size = TS_SM, bgcolor = c7RowBg)
+    table.cell(t, 2, 9, c7ValStr,       text_color = useC7 ? C_VALUE_TXT : C_DIM_TXT, text_size = TS_SM, bgcolor = c7RowBg)
     table.cell(t, 3, 9, useC7 ? f_badge(c7_div) : "—",
-         text_color = useC7 ? f_badgeTxt(c7_div) : color.new(#c9d1d9, 70),
-         text_size = size.small, bgcolor = useC7 ? f_badgeBg(c7_div) : c7RowBg)
+         text_color = useC7 ? f_badgeTxt(c7_div) : C_DIM_TXT,
+         text_size = TS, bgcolor = useC7 ? f_badgeBg(c7_div) : c7RowBg)
 
     // Fila 10 — Score + SL
-    color  scoreBg = fullSignal ? C_READY_BG : partialSignal ? C_WARN_BG : color.new(#1a1a2e, 0)
-    string slStr   = "SL " + str.tostring(slLevel, "#.##") + "  (-" + str.tostring(slPct, "#.#") + "%)"
-    table.cell(t, 0, 10, "SCORE",       text_color = color.white, text_size = size.small, bgcolor = scoreBg)
-    table.cell(t, 1, 10, str.tostring(score) + "/" + str.tostring(scoreMax) + " tecnicas", text_color = color.white, text_size = size.small, bgcolor = scoreBg)
-    table.cell(t, 2, 10, slStr,         text_color = color.new(#ffcdd2, 0), text_size = size.tiny, bgcolor = scoreBg)
+    color  scoreBg    = fullSignal ? C_READY_BG : partialSignal ? C_WARN_BG : C_ROW_ALT_BG
+    color  scoreTxt   = fullSignal ? C_READY_TXT : partialSignal ? C_WARN_TXT : C_LABEL_TXT
+    string slStr      = "SL " + str.tostring(slLevel, "#.##") + "  (-" + str.tostring(slPct, "#.#") + "%)"
+    table.cell(t, 0, 10, "SCORE",       text_color = scoreTxt, text_size = TS,    bgcolor = scoreBg)
+    table.cell(t, 1, 10, str.tostring(score) + "/" + str.tostring(scoreMax) + " tecnicas", text_color = scoreTxt, text_size = TS, bgcolor = scoreBg)
+    table.cell(t, 2, 10, slStr,         text_color = color.new(#991b1b, 0), text_size = TS_SM, bgcolor = scoreBg)
     table.cell(t, 3, 10, "",            bgcolor = scoreBg)
 
     // Fila 11 — Resultado final
-    string resultTxt = fullSignal    ? "READY ("     + str.tostring(score) + "/" + str.tostring(scoreMax) + ")" :
-                       partialSignal ? "WATCH ("     + str.tostring(score) + "/" + str.tostring(scoreMax) + ")" :
-                                       "NOT READY (" + str.tostring(score) + "/" + str.tostring(scoreMax) + ")"
-    color  resultBg  = fullSignal ? C_READY_BG : partialSignal ? C_WARN_BG : C_NOTREADY_BG
+    string resultTxt  = fullSignal ? "READY (" + str.tostring(score) + "/" + str.tostring(scoreMax) + ")" : partialSignal ? "WATCH (" + str.tostring(score) + "/" + str.tostring(scoreMax) + ")" : "NOT READY (" + str.tostring(score) + "/" + str.tostring(scoreMax) + ")"
+    color  resultBg   = fullSignal ? C_READY_BG : partialSignal ? C_WARN_BG : C_NOTREADY_BG
+    color  resultTxtC = fullSignal ? C_READY_TXT : partialSignal ? C_WARN_TXT : C_NOTREADY_TXT
     table.merge_cells(t, 0, 11, 3, 11)
-    table.cell(t, 0, 11, resultTxt,     text_color = color.white, text_size = size.normal, bgcolor = resultBg)
+    table.cell(t, 0, 11, resultTxt,     text_color = resultTxtC, text_size = TS, bgcolor = resultBg)
 
     // Fila 12 — Config activa
-    string cfgStr = "C2:" + str.tostring(c2TrendBars) + "b  " +
-         "C6:" + (c6Required ? "OBLIG" : "punt") + "  " +
-         "TFsup:" + (useSuperTF ? (superTFRequired ? "OBLIG" : "punt") : "OFF") + "  " +
-         "C7:" + (not useC7 ? "OFF" : c7Required ? "OBLIG" : "punt") + " " + str.tostring(c7Lookback) + "b"
+    string cfgStr = "C2:" + str.tostring(c2TrendBars) + "b  C6:" + (c6Required ? "OBLIG" : "punt") + "  TFsup:" + (useSuperTF ? (superTFRequired ? "OBLIG" : "punt") : "OFF") + "  C7:" + (not useC7 ? "OFF" : c7Required ? "OBLIG" : "punt") + " " + str.tostring(c7Lookback) + "b"
     table.merge_cells(t, 0, 12, 3, 12)
-    table.cell(t, 0, 12, cfgStr,        text_color = color.new(#58a6ff, 30), text_size = size.tiny, bgcolor = color.new(#0d1117, 0))
+    table.cell(t, 0, 12, cfgStr,        text_color = color.new(#6b7280, 0), text_size = TS_SM, bgcolor = C_ROW_ALT_BG)
 
     // Fila 13 — Versión
-    string verStr = "Ovtlier Plan A v5  " + str.tostring(year) + "-" + str.tostring(month, "00") + "-" + str.tostring(dayofmonth, "00")
+    string verStr = "Ovtlier Plan A v5.1  " + str.tostring(year) + "-" + str.tostring(month, "00") + "-" + str.tostring(dayofmonth, "00")
     table.merge_cells(t, 0, 13, 3, 13)
-    table.cell(t, 0, 13, verStr,        text_color = color.new(#c9d1d9, 60), text_size = size.tiny, bgcolor = C_HEADER_BG)
+    table.cell(t, 0, 13, verStr,        text_color = C_DIM_TXT, text_size = TS_SM, bgcolor = C_HEADER_BG)
 
-// ─── ALERTAS ──────────────────────────────────────────────────
+// ─── ALERTAS (sin cambios vs v5) ──────────────────────────────
 string alertBase = syminfo.ticker + " | TF: " + timeframe.period +
      " | Close: "  + str.tostring(close, "#.##") +
      " | SL: "     + str.tostring(slLevel, "#.##") +
