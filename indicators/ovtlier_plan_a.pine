@@ -2,12 +2,12 @@
 // © Ovtlier University | Plan A Swing Indicator v5.1
 // Basado en la metodología de Christopher Uhl
 // Temporalidades: Daily (D) y Weekly (W)
-// v5.1: Paleta clara (misma que Market Dashboard v5.2)
-//       Tamaño de texto configurable desde inputs
-//       Sin cambios en lógica de negocio ni request.security()
+// v5.2: Contraste de texto reforzado — C_HEADER_TXT, C_LABEL_TXT, C_VALUE_TXT (misma que Market Dashboard v5.2)
+//       mas oscuros para mayor legibilidad sobre fondos claros
+//       Sin cambios en lógica de negocio ni request.security() (v5.2)
 // ═══════════════════════════════════════════════════════════════
 //@version=6
-indicator("Ovtlier Plan A - Swing v5.1", overlay = true, max_bars_back = 500)
+indicator("Ovtlier Plan A - Swing v5.2", overlay = true, max_bars_back = 500)
 
 // ─── INPUTS ───────────────────────────────────────────────────
 
@@ -104,11 +104,11 @@ color C_C6_BG       = color.new(#eff6ff, 0)   // azul pálido  — C6 tendencia
 color C_STF_BG      = color.new(#f5f3ff, 0)   // lila pálido  — C1b TF superior
 color C_C7_BG       = color.new(#f0fdfa, 0)   // teal pálido  — C7 divergencia
 
-// Textos principales
-color C_HEADER_TXT  = color.new(#374151, 0)   // th-text
-color C_LABEL_TXT   = color.new(#1a1f2e, 0)   // text
-color C_VALUE_TXT   = color.new(#4b5563, 0)   // text2
-color C_TICKER_TXT  = color.new(#1d4ed8, 0)   // blue destacado
+// Textos principales — reforzados para mayor contraste sobre fondos claros
+color C_HEADER_TXT  = color.new(#111827, 0)   // casi negro — cabecera
+color C_LABEL_TXT   = color.new(#0f1117, 0)   // negro puro — labels condiciones
+color C_VALUE_TXT   = color.new(#1f2937, 0)   // gris muy oscuro — valores numéricos
+color C_TICKER_TXT  = color.new(#1d4ed8, 0)   // blue destacado — sin cambio
 
 // Badges PASS
 color C_PASS_BG     = color.new(#dcfce7, 0)   // tag-green-bg
@@ -384,7 +384,7 @@ if showTable and barstate.islast
     table.cell(t, 0, 12, cfgStr,        text_color = color.new(#6b7280, 0), text_size = TS_SM, bgcolor = C_ROW_ALT_BG)
 
     // Fila 13 — Versión
-    string verStr = "Ovtlier Plan A v5.1  " + str.tostring(year) + "-" + str.tostring(month, "00") + "-" + str.tostring(dayofmonth, "00")
+    string verStr = "Ovtlier Plan A v5.2  " + str.tostring(year) + "-" + str.tostring(month, "00") + "-" + str.tostring(dayofmonth, "00")
     table.merge_cells(t, 0, 13, 3, 13)
     table.cell(t, 0, 13, verStr,        text_color = C_DIM_TXT, text_size = TS_SM, bgcolor = C_HEADER_BG)
 

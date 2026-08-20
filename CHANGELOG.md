@@ -6,7 +6,19 @@ Tags use the format `plan-a/vN` (e.g. `plan-a/v1`, `plan-a/v2`).
 
 ---
 
-## [plan-a/v5.1] — 2026-04-30 (Current)
+## [plan-a/v5.2] — 2026-04-30 (Current)
+
+### Changed — Visual only. No logic changes.
+
+- `C_HEADER_TXT`: `#374151` -> `#111827` (casi negro)
+- `C_LABEL_TXT`: `#1a1f2e` -> `#0f1117` (negro puro)
+- `C_VALUE_TXT`: `#4b5563` -> `#1f2937` (gris muy oscuro)
+
+Insufficient contrast on light backgrounds at small text sizes.
+
+---
+
+## [plan-a/v5.1] — 2026-04-30
 
 ### Changed — Visual only. No logic changes.
 
