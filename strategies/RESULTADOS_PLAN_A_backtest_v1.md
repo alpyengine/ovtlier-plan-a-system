@@ -481,3 +481,128 @@ El sistema Plan A funciona en activos que comparten estas características:
 ---
 
 *Documento de proyecto — Ovtlier Plan A System. No es asesoramiento financiero.*
+
+---
+
+## §28 · VERIFICACIÓN DE CONCENTRACIÓN — CIERRE DE LOS 3 CASOS PENDIENTES
+
+*Auditoría operación por operación. Mismo protocolo que campaña SAR (COPPER-M, VGT-M).*
+*Umbral: si 1 operación explica > 50% del beneficio bruto → DESCARTADO POR CONCENTRACIÓN.*
+*Fuente: CSV exportados del Strategy Tester de TradingView, 21 ago 2026.*
+
+---
+
+### Caso 1 — AMZN Daily — DESCARTADO + CORRECCIÓN DE DATOS
+
+**Dato corregido:** el dashboard del backtest mostraba 6 trades y PF 7,26. El CSV exportado revela **18 trades cerrados** con net profit **-$28.928 (-2,89%)**.
+
+| Trade | Fecha salida | PnL USD | Resultado |
+|---|---|---|---|
+| 1 | 1999-04-30 | +$19.708 | Ganador |
+| 2 | 2002-08-27 | -$64.674 | **Perdedor** |
+| 3 | 2002-12-09 | -$921 | Perdedor |
+| 4 | 2003-10-24 | +$20.167 | Ganador |
+| 5 | 2006-12-06 | -$20.736 | Perdedor |
+| 6 | 2007-10-15 | +$20.310 | Ganador |
+| 7 | 2009-06-16 | +$3.662 | Ganador |
+| 8 | 2016-04-27 | -$9.150 | Perdedor |
+| 9 | 2016-09-13 | +$13.030 | Ganador |
+| 10 | 2017-02-01 | +$4.929 | Ganador |
+| 11 | 2017-03-22 | -$14.391 | Perdedor |
+| 12 | 2017-06-13 | +$9.557 | Ganador |
+| 13 | 2019-07-31 | +$2.413 | Ganador |
+| 14 | 2020-02-25 | +$9.750 | Ganador |
+| 15 | 2024-02-21 | +$65 | Ganador |
+| 16 | 2024-07-15 | -$2.315 | Perdedor |
+| 17 | 2024-10-01 | -$12.893 | Perdedor |
+| 18 | 2026-02-02 | -$7.439 | Perdedor |
+
+**Análisis de concentración (ganadores):**
+- Beneficio bruto total: $103.591
+- Pérdida bruta total: -$132.520
+- Operación mayor: Trade 6 (2007), $20.310 = **19,6% del bruto**
+- Top 2 operaciones: $40.477 = **39,1% del bruto**
+
+**¿Por qué el dashboard mostraba 6 trades?** El período visible en el gráfico estaba limitado al historial reciente. El CSV exporta el historial completo desde 1999 — 18 trades reales.
+
+**Veredicto: DESCARTADO — net negativo confirmado**
+Sin concentración excesiva (ninguna operación supera el 20% del bruto — bien distribuido), pero la pérdida bruta supera al beneficio bruto. AMZN no es un activo apto para el Plan A Daily con Config 2. El PF 7,26 del dashboard era un artefacto del período de visualización limitado, no un resultado real del sistema completo.
+
+---
+
+### Caso 2 — VGT Weekly — DESCARTADO POR RESULTADO REAL NEGATIVO
+
+**Dato corregido:** el dashboard mostraba 4 trades con 100% win y +16,03%. El CSV exportado revela **39 trades cerrados** con net profit **+$5.682 (+0,57%)** — prácticamente break-even.
+
+| Métrica | Dashboard (parcial) | CSV completo |
+|---|---|---|
+| Trades | 4 | **39** |
+| Win Rate | 100% | **46,2% (18/39)** |
+| Net Profit | +16,03% | **+0,57%** |
+| Profit Factor | — | **~1,02** |
+
+**Análisis de concentración (ganadores):**
+- Beneficio bruto total: $252.767
+- Pérdida bruta total: -$247.084
+- Operación mayor: Trade 26 (jul 2021), $48.058 = **19,0% del bruto**
+- Top 2 operaciones: $95.846 = **37,9% del bruto**
+
+Sin concentración excesiva — el beneficio está bien distribuido entre 18 operaciones ganadoras. El problema no es concentración sino que beneficio bruto y pérdida bruta son prácticamente iguales.
+
+**Veredicto: DESCARTADO — break-even después de costes**
+El resultado real es +0,57% en toda la historia disponible. PF efectivo ≈ 1,02 — no supera el umbral de 1,2. El +16,03% del dashboard era artefacto del período de visualización. VGT Weekly no añade valor sobre Buy & Hold.
+
+---
+
+### Caso 3 — ILMN Weekly — DESCARTADO POR CONCENTRACIÓN + RESULTADO NEGATIVO
+
+**Dato corregido:** el dashboard mostraba 3 trades con PF 1,70 y +6,87%. El CSV exportado revela **13 trades cerrados** con net profit **-$38.140 (-3,81%)**.
+
+| Trade | Fecha salida | PnL USD | % del bruto ganador |
+|---|---|---|---|
+| 1 | 2003-10-10 | +$26.020 | 16,1% |
+| 2 | 2003-12-11 | -$90.888 | — |
+| 3 | 2009-10-26 | -$16.363 | — |
+| 4 | 2011-02-23 | +$16.626 | 10,3% |
+| 5 | 2011-07-13 | +$9.884 | 6,1% |
+| 6 | 2013-09-20 | -$16.812 | — |
+| **7** | **2013-12-27** | **+$90.144** | **55,7%** ⚠️ |
+| 8 | 2017-05-10 | -$8.728 | — |
+| 9 | 2017-12-06 | -$7.377 | — |
+| 10 | 2019-07-15 | -$14.909 | — |
+| 11 | 2021-07-16 | +$3.131 | 1,9% |
+| 12 | 2026-02-02 | -$44.949 | — |
+| 13 | 2026-04-27 | +$16.081 | 9,9% |
+
+**Análisis de concentración:**
+- Operación mayor (Trade 7, dic 2013): $90.144 = **55,7% del beneficio bruto** ⚠️ SUPERA UMBRAL
+- Top 2 operaciones: **71,8% del beneficio bruto**
+- Sin Trade 7: net profit = -$128.284 — el sistema destruye capital
+
+**Veredicto: DESCARTADO POR CONCENTRACIÓN + RESULTADO NEGATIVO**
+Una sola operación (dic 2013, rally post-earnings de ILMN) explica el 55,7% del beneficio bruto total — supera el umbral del 50%. Sin esa operación, el sistema pierde -$128.284. El PF 1,70 del dashboard era artefacto del período de visualización limitado a los 3 trades más recientes. Igual tratamiento que COPPER-M en la campaña SAR.
+
+---
+
+### Resumen de la auditoría de concentración
+
+| Caso | Dashboard | CSV real | Causa del error | Veredicto |
+|---|---|---|---|---|
+| AMZN Daily | PF 7,26 · 6 trades · +6,13% | PF < 1 · 18 trades · -2,89% | Período de visualización limitado | ❌ DESCARTADO — net negativo |
+| VGT Weekly | 4 trades · 100% win · +16,03% | 39 trades · 46% win · +0,57% | Período de visualización limitado | ❌ DESCARTADO — break-even |
+| ILMN Weekly | PF 1,70 · 3 trades · +6,87% | PF < 1 · 13 trades · -3,81% | Período limitado + concentración 55,7% | ❌ DESCARTADO POR CONCENTRACIÓN |
+
+**Los 3 casos fallan la auditoría.** Ninguno se promueve. La causa común es que el dashboard del backtest mostraba resultados sobre el historial visible en pantalla, no sobre el historial completo exportado en el CSV.
+
+---
+
+### Impacto en el universo operativo (tabla maestra actualizada)
+
+| Tier anterior | Ticker | Veredicto auditoría | Tier final |
+|---|---|---|---|
+| Tier 3 Vigilar | AMZN | Net negativo en historial completo | ❌ **DESCARTADO** |
+| Tier 1 Núcleo | VGT Weekly | Break-even en historial completo | ❌ **Weekly descartado** — Daily mantiene Tier 1 |
+| Tier 3 Vigilar | ILMN | Concentración 55,7% + net negativo | ❌ **DESCARTADO** |
+
+**Lección metodológica:** verificar siempre el CSV completo antes de clasificar un resultado como válido. El dashboard del Strategy Tester muestra resultados sobre el período visible en pantalla — si el gráfico no está en vista máxima de historial, los datos son parciales. Esta verificación pasa a ser paso obligatorio del protocolo de campaña para todas las pruebas futuras.
+
