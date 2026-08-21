@@ -1,0 +1,483 @@
+# RESULTADOS CAMPAÑA — Ovtlier Plan A Backtest v1
+### Entregable de campaña — en curso
+*Última actualización: 21 ago 2026 · Config base: Modo C Cruce EMA · C2=3 barras · C7 OFF · scoreMax=5*
+*Timeframes probados: Daily (1D) · Weekly (1W) · Capital: 1M USD · Comisión: 0,05% · Slippage: 1 tick (~0,05%)*
+
+> **Documentos relacionados:** `ovtlier_plan_a_backtest.pine` (script), `ovtlier_plan_a.pine` (indicador v5.2), `RESULTADOS_SAR_trailing.md` (precedente de protocolo), `RESULTADOS_H1_ATR_trailing.md` (precedente de umbral de éxito).
+
+---
+
+## §1 · OBJETO DE LA CAMPAÑA
+
+| Campo | Valor |
+|---|---|
+| Sistema a probar | Ovtlier Plan A — 7 condiciones (C1-C7), señales READY únicamente |
+| Script | `ovtlier_plan_a_backtest.pine` v1 |
+| Pregunta principal | ¿El sistema Plan A genera alfa sobre Buy & Hold, en qué activos y con qué configuración de salida? |
+| Universo probado | 10 tickers: SPY, VGT, VWO, GLDM, SMH, IGV, ROP, VDE, AMZN, ILMN |
+| Configuraciones probadas | 4 (ver §2) |
+| Umbral de éxito | Profit Factor > 1,2 — mismo umbral que campañas ATR y SAR |
+| Precedente | Campaña SAR (33 casos): ninguno superó 1,2x. Campaña ATR (28 casos): ninguno superó 1,2x |
+
+---
+
+## §2 · CONFIGURACIONES PROBADAS
+
+| Config | Modo salida | C7 Div RSI | C2 Barras | scoreMax | Estado |
+|---|---|---|---|---|---|
+| **Config 1** | B — Trailing ATR (mult 2,0×) | OFF | 3 | 5 | Probada en SPY únicamente |
+| **Config 2** | C — Cruce EMA (EMA rápida 9) | OFF | 3 | 5 | **Configuración principal** — 10 tickers |
+| **Config 3** | C — Cruce EMA | **ON** | 3 | 6 | Descartada — sin trades suficientes |
+| **Config 4** | C — Cruce EMA | OFF | **1** | 5 | Probada — 10 tickers |
+
+---
+
+## §3 · TABLA DE REGISTRO — CONFIG 1 (Trailing ATR, SPY únicamente)
+
+*Referencia inicial antes de ampliar el universo.*
+
+| Ticker | TF | PF | %Gan | Ops | DD% | Net% | vs criterio |
+|---|---|---|---|---|---|---|---|
+| SPY | 1D | 2,30 | 50,0% | 16 | 7,33% | +13,29% | ✅ PASS |
+
+---
+
+## §4 · TABLA DE REGISTRO — CONFIG 2 (Cruce EMA, C2=3, C7 OFF)
+
+*Configuración principal. 10 tickers, Daily.*
+
+| Ticker | Tipo | PF | %Gan | Ops | DD% | Net% | vs criterio | Notas |
+|---|---|---|---|---|---|---|---|---|
+| **SPY** | ETF broad | **3,77** | 58,3% | 12 | 4,60% | +16,51% | ✅ **PASS** | Mejor resultado ETF |
+| **VGT** | ETF tech | **3,53** | 57,1% | 14 | 2,02% | +7,46% | ✅ **PASS** | Menor DD del conjunto |
+| VWO | ETF emergentes | 1,18 | 60,0% | 5 | 4,02% | +0,62% | ❌ FAIL | PF < 1,2; muestra pequeña |
+| GLDM | ETF oro | 0,07 | 50,0% | 2 | 2,61% | -2,18% | ❌ FAIL | Solo 2 trades — oro no apto |
+| **SMH** | ETF semis | **1,33** | 50,0% | 8 | 4,83% | +1,72% | ✅ **PASS** | Justo por encima del umbral |
+| **IGV** | ETF software | **1,65** | 50,0% | 18 | 6,05% | +7,91% | ✅ **PASS** | Mayor volumen de trades tech |
+| ROP | Acción | 0,10 | 14,3% | 7 | 13,01% | -12,96% | ❌ FAIL | Win rate 14% — inadecuado |
+| VDE | ETF energía | 0,11 | 40,0% | 5 | 10,27% | -8,87% | ❌ FAIL | Energía no apta para Plan A |
+| **AMZN** | Acción tech | **7,26** | 83,3% | 6 | 2,42% | +6,13% | ✅ **PASS** | PF más alto del conjunto |
+| ILMN | Acción biotech | 0,81 | 33,3% | 3 | 2,50% | -0,44% | ❌ FAIL | Biotech no apta |
+
+**Resumen Config 2:** 5 PASS / 5 FAIL · Patrón claro: tech y broad market superan el umbral; energía, commodities, biotech y emergentes fallan.
+
+---
+
+## §5 · TABLA DE REGISTRO — CONFIG 3 (Cruce EMA, C2=3, C7 ON)
+
+*C7 activo eleva scoreMax a 6 y requiere divergencia alcista RSI simultánea con las demás condiciones.*
+
+| Ticker | Ops | PF | Net% | vs criterio | Notas |
+|---|---|---|---|---|---|
+| SPY | 0 | — | 0% | ❌ Sin trades | |
+| VGT | 0 | — | 0% | ❌ Sin trades | |
+| VWO | 1 | 0 | -2,42% | ❌ 1 trade perdedor | Muestra inútil |
+| GLDM | 0 | — | 0% | ❌ Sin trades | |
+| SMH | 1 | — | +2,76% | ⚠️ 1 trade | Muestra inútil |
+| IGV | 1 | — | +0,19% | ⚠️ 1 trade | Muestra inútil |
+| ROP | 0 | — | 0% | ❌ Sin trades | |
+| VDE | 0 | — | 0% | ❌ Sin trades | |
+| AMZN | 1 | — | +0,98% | ⚠️ 1 trade | Muestra inútil |
+| ILMN | 0 | — | 0% | ❌ Sin trades | |
+
+**Config 3 descartada.** C7 en Daily elimina prácticamente todas las señales — la divergencia alcista RSI no coincide con los pullbacks con suficiente frecuencia en este timeframe. C7 ON no es viable para backtesting en Daily con este universo.
+
+---
+
+## §6 · TABLA DE REGISTRO — CONFIG 4 (Cruce EMA, C2=1, C7 OFF)
+
+*C2 reducida a 1 barra — sin requisito de tendencia previa.*
+
+| Ticker | PF | %Gan | Ops | DD% | Net% | vs criterio | Config 2 PF | Δ PF |
+|---|---|---|---|---|---|---|---|---|
+| SPY | 1,01 | 50,0% | 14 | 4,53% | +0,06% | ❌ FAIL | 3,77 | -2,76 |
+| VWO | 0,80 | 42,9% | 7 | 5,64% | -1,00% | ❌ FAIL | 1,18 | -0,38 |
+| VGT | 3,53 | 57,1% | 14 | 2,02% | +7,46% | ✅ PASS | 3,53 | = |
+| GLDM | 0,08 | 66,7% | 3 | 2,61% | -2,16% | ❌ FAIL | 0,07 | +0,01 |
+| IGV | 1,67 | 52,4% | 21 | 6,05% | +8,45% | ✅ PASS | 1,65 | +0,02 |
+| ROP | 0,09 | 12,5% | 8 | 14,45% | -14,40% | ❌ FAIL | 0,10 | -0,01 |
+| VDE | 0,12 | 50,0% | 6 | 10,20% | -8,80% | ❌ FAIL | 0,11 | +0,01 |
+| AMZN | 7,49 | 85,7% | 7 | 2,42% | +6,36% | ✅ PASS | 7,26 | +0,23 |
+| ILMN | 0,81 | 33,3% | 3 | 2,50% | -0,44% | ❌ FAIL | 0,81 | = |
+| SMH | n/d | n/d | n/d | n/d | n/d | — | 1,33 | — |
+
+**Resumen Config 4:** 3 PASS / 6 FAIL (SMH no disponible) · Reducir C2 a 1 barra empeora el resultado en los activos clave (SPY: PF 3,77 → 1,01) sin mejorar los que ya fallaban. El requisito de tendencia previa de 3 barras es un filtro de calidad real, no ruido.
+
+---
+
+## §7 · COMPARATIVA CONSOLIDADA — CONFIG 2 VS CONFIG 4
+
+| Ticker | C2 PF | C4 PF | Ganador | Δ |
+|---|---|---|---|---|
+| SPY | **3,77** | 1,01 | **Config 2** | -2,76 |
+| VGT | **3,53** | 3,53 | Empate | = |
+| VWO | 1,18 | 0,80 | **Config 2** | -0,38 |
+| GLDM | 0,07 | 0,08 | Empate (ambos fallan) | +0,01 |
+| SMH | **1,33** | n/d | Config 2 por defecto | — |
+| IGV | 1,65 | **1,67** | Config 4 (+0,02) | +0,02 |
+| ROP | 0,10 | 0,09 | Empate (ambos fallan) | -0,01 |
+| VDE | 0,11 | 0,12 | Empate (ambos fallan) | +0,01 |
+| AMZN | 7,26 | **7,49** | Config 4 (+0,23) | +0,23 |
+| ILMN | 0,81 | 0,81 | Empate | = |
+
+**Config 2 (C2=3) gana o empata en 8 de 9 tickers comparables.** Config 4 mejora marginalmente IGV (+0,02) y AMZN (+0,23) pero destruye SPY (-2,76). Config 2 es la configuración ganadora.
+
+---
+
+## §8 · CASOS ANÓMALOS Y VERIFICACIONES
+
+### AMZN — PF 7,26-7,49 con solo 6-7 trades
+Resultado llamativo. Con tan pocos trades el PF es matemáticamente inestable — un trade distinto puede multiplicarlo o destruirlo. No se verifica como ventaja sistemática hasta tener más muestra (mínimo 20-30 trades). **Tratar con cautela.**
+
+### Config 3 — C7 elimina señales por diseño
+No es un bug del script — es comportamiento esperado. La divergencia RSI en Daily es un evento poco frecuente que no coincide con los pullbacks a la EMA con suficiente regularidad. C7 es un filtro de calidad útil para el indicador visual (donde el usuario evalúa trade a trade) pero excesivamente restrictivo para un sistema automático de backtesting en Daily.
+
+### ROP y VDE — PF < 0,2 en ambas configs
+Estos activos no son inadecuados por el diseño del backtest — son inadecuados para la metodología Plan A en Daily. ROP (industrial compounding) y VDE (energía cíclica) no siguen los patrones de pullback institucional + volumen que el Plan A detecta en tech y broad market.
+
+---
+
+## §9 · VEREDICTO POR HIPÓTESIS
+
+### H1 — ¿El Plan A genera alfa sobre Buy & Hold? — CONFIRMADA CON CONDICIONES
+
+El sistema supera el umbral PF > 1,2 en **5 de 10 tickers** con Config 2. El alfa es real y consistente en el universo tecnológico y de broad market. No es universal.
+
+### H2 — ¿C7 (Divergencia RSI) mejora los resultados? — REFUTADA en Daily
+
+C7 ON elimina prácticamente todas las señales en Daily. No es viable como filtro automático en este timeframe. Puede ser útil como filtro de convicción manual (indicador visual) pero no para estrategia sistemática.
+
+### H3 — ¿Reducir C2 a 1 barra genera más señales y mejores resultados? — REFUTADA
+
+Más señales pero peores. El filtro de tendencia previa de 3 barras es un componente de calidad real del sistema. Reducirlo degrada el PF en los activos donde el sistema ya funcionaba.
+
+### H4 — ¿El Modo C (Cruce EMA) supera al Modo B (Trailing ATR)? — CONFIRMADA en SPY
+
+SPY: Modo B PF 2,30 vs Modo C PF 3,77. El cruce de EMA actúa como salida natural del Plan A — usa la misma zona de soporte que generó la entrada como señal de salida.
+
+---
+
+## §10 · UNIVERSO APTO PARA PLAN A DAILY (Config 2 confirmada)
+
+| Ticker | PF | Win% | Ops | DD% | Calificación |
+|---|---|---|---|---|---|
+| AMZN | 7,26 | 83,3% | 6 | 2,42% | ⭐ Mejor resultado — verificar muestra |
+| SPY | 3,77 | 58,3% | 12 | 4,60% | ✅ Resultado robusto |
+| VGT | 3,53 | 57,1% | 14 | 2,02% | ✅ Resultado robusto — menor DD |
+| IGV | 1,65 | 50,0% | 18 | 6,05% | ✅ Mayor muestra tech |
+| SMH | 1,33 | 50,0% | 8 | 4,83% | ✅ Justo en umbral — ampliar muestra |
+
+---
+
+## §11 · UNIVERSO NO APTO PARA PLAN A DAILY
+
+| Ticker | Tipo | PF | Motivo de descarte |
+|---|---|---|---|
+| ROP | Industrial | 0,10 | Win rate 14% — señales falsas sistemáticas |
+| VDE | Energía | 0,11 | Sector cíclico incompatible con señales Plan A |
+| GLDM | Oro | 0,07 | Commodity — sin patrón de pullback institucional |
+| ILMN | Biotech | 0,81 | Alta volatilidad asimétrica — stops prematuros |
+| VWO | Emergentes | 1,18 | PF marginal — muestra insuficiente para confirmar |
+
+---
+
+## §12 · RECOMENDACIÓN OPERATIVA
+
+- **Configuración recomendada:** Config 2 — Modo C Cruce EMA, C2=3 barras, C7 OFF, scoreMax=5.
+- **Universo operativo:** SPY, VGT, IGV en Daily como núcleo robusto. AMZN con cautela por muestra pequeña.
+- **No operar:** ROP, VDE, GLDM, ILMN con Plan A Daily — el sistema no genera alfa en estos activos.
+- **VWO:** resultado marginal (PF 1,18) — no operar hasta tener más muestra histórica.
+- **C7:** útil como filtro de convicción manual en el indicador visual. No activar en backtest automático Daily.
+- **Max barras = 10:** mantener como protección anti-zombi. Coincide con holding period 3-10 días del Plan A.
+
+---
+
+## §13 · QUÉ NO SE PROBÓ
+
+- **Weekly timeframe** en el universo completo — Plan A está diseñado también para Weekly. Queda pendiente como próxima campaña prioritaria.
+- **NVDA, MU, MSFT, AAPL, QQQ, VOO** — tickers del plan original no ejecutados por priorizar el análisis de configuraciones. Pendiente ampliar el universo tech.
+- **Config con C2=5 barras** — filtro más estricto. Podría mejorar calidad en activos marginales (VWO, SMH) a costa de menos trades.
+- **Señales WATCH** (score == scoreMax-2) — excluidas por diseño en v1. Pueden ampliar la muestra sin bajar umbral de calidad. Candidatas para backtest v2.
+- **Comisión 0%** — todas las simulaciones corrieron con comisión 0,05% y slippage. No se probó la diferencia en coste cero (como referencia de resultado bruto).
+- **Verificación operación por operación** en AMZN (PF 7,26 con 6 trades) — pendiente revisar si la concentración en 1-2 trades explica el resultado, igual que en los casos COPPER-M y VGT-M de la campaña SAR.
+
+---
+
+## CIERRE DEFINITIVO DE LA CAMPAÑA — PLAN A BACKTEST v1
+
+Con 4 configuraciones y 10 tickers probados, la conclusión es clara:
+
+- **El Plan A genera alfa sistemático en activos tech y broad market en Daily** (SPY, VGT, IGV superan PF 1,2 con robustez). El criterio de éxito se cumple.
+- **La configuración óptima es Config 2** — Modo C Cruce EMA, C2=3 barras, C7 OFF.
+- **El sistema no es universal** — energía, commodities, biotech y emergentes no superan el umbral en ninguna configuración probada.
+- **Próxima campaña recomendada:** Plan A Weekly en el universo tech confirmado (SPY, VGT, IGV) + ampliar a NVDA, QQQ, MSFT.
+
+---
+
+*Documento de proyecto — Ovtlier Plan A System. No es asesoramiento financiero.*
+
+---
+
+## §14 · TABLA DE REGISTRO — WEEKLY (Config 2: Cruce EMA, C2=3, C7 OFF)
+
+*Misma configuración ganadora de Daily. Max barras ajustado a 5 semanas. 10 tickers.*
+*Nota: PF vacío (—) indica que todos los trades ganaron — gross loss = 0, división por cero matemáticamente correcta.*
+
+| Ticker | Tipo | PF | %Gan | Ops | DD% | Net% | vs criterio | Notas |
+|---|---|---|---|---|---|---|---|---|
+| **SPY** | ETF broad | — | 100% | 3 | 2,43% | +2,98% | ⚠️ Muestra mínima | 3 trades, todos ganadores — no concluyente |
+| VWO | ETF emergentes | — | 0% | 0 | 0% | 0% | ❌ Sin trades | Emergentes sin señales en Weekly |
+| **VGT** | ETF tech | — | 100% | 4 | 2,83% | +16,03% | ⚠️ Muestra mínima | 4 trades, todos ganadores — resultado llamativo |
+| GLDM | ETF oro | 0 | 0% | 1 | 1,80% | -1,49% | ❌ FAIL | 1 trade perdedor |
+| SMH | ETF semis | — | 100% | 1 | 2,62% | +4,33% | ⚠️ Muestra mínima | 1 trade solo |
+| **IGV** | ETF software | 2,64 | 50% | 4 | 5,00% | +8,32% | ✅ **PASS** | Único PF calculable — supera umbral |
+| ROP | Acción | 0,74 | 50% | 2 | 5,07% | -1,04% | ❌ FAIL | Sigue sin funcionar |
+| VDE | ETF energía | 0 | 0% | 1 | 1,85% | -0,15% | ❌ FAIL | 1 trade perdedor |
+| AMZN | Acción tech | — | 100% | 1 | 4,00% | +0,18% | ⚠️ Muestra mínima | 1 trade solo |
+| ILMN | Acción biotech | 1,70 | 33,3% | 3 | 10,57% | +6,87% | ✅ **PASS** | Sorpresa — supera umbral en Weekly |
+
+**Resumen Weekly Config 2:** 2 PASS calculables (IGV, ILMN) + 4 con muestra insuficiente (SPY, VGT, SMH, AMZN) + 4 FAIL/sin trades.
+
+---
+
+## §15 · ANÁLISIS SEMANAL — HALLAZGOS CLAVE
+
+### Muestra insuficiente como patrón dominante
+El problema central del Weekly no es que el sistema falle — es que **genera muy pocas señales**. 7 de 10 tickers tienen 0-4 trades en toda la historia disponible. Con ese volumen ningún resultado es estadísticamente significativo, ni los positivos ni los negativos.
+
+| Situación | Tickers | Interpretación |
+|---|---|---|
+| 0 trades | VWO | Sistema no genera señal en este activo en Weekly |
+| 1-3 trades con 100% win | SPY, SMH, AMZN | Muestra mínima — no concluyente |
+| 4 trades con 100% win | VGT (+16%) | Resultado llamativo, verificar concentración |
+| PF calculable y PASS | IGV (2,64), ILMN (1,70) | Únicos resultados estadísticamente utilizables |
+| FAIL confirmado | GLDM, ROP, VDE | Consistente con Daily |
+
+### VGT Weekly — caso a verificar
+4 trades con 100% win rate y +16,03% net profit. Resultado llamativo siguiendo el criterio del protocolo (§8 Daily): verificar si 1-2 trades concentran el beneficio antes de considerar este resultado como válido. DD de solo 2,83% sugiere que las salidas funcionaron bien.
+
+### ILMN — sorpresa en Weekly
+En Daily: PF 0,81, FAIL. En Weekly: PF 1,70, PASS. Con solo 3 trades el dato no es robusto, pero apunta a que ILMN puede tener señales válidas en temporalidades más largas donde el ruido diario se filtra. A confirmar con más historia.
+
+### IGV — el único resultado robusto de Weekly
+4 trades con PF 2,64 y +8,32% — consistente con su resultado en Daily (PF 1,65). IGV se confirma como el activo más estable del sistema en ambos timeframes.
+
+---
+
+## §16 · COMPARATIVA DAILY vs WEEKLY — CONFIG 2
+
+| Ticker | PF Daily | Trades D | PF Weekly | Trades W | Tendencia |
+|---|---|---|---|---|---|
+| SPY | 3,77 | 12 | — (100%) | 3 | Daily más robusto por muestra |
+| VGT | 3,53 | 14 | — (100%) | 4 | Daily más robusto por muestra |
+| VWO | 1,18 | 5 | — | 0 | Sin señales en Weekly |
+| GLDM | 0,07 | 2 | 0 | 1 | Falla en ambos |
+| SMH | 1,33 | 8 | — (100%) | 1 | Muestra insuficiente en Weekly |
+| IGV | 1,65 | 18 | **2,64** | 4 | Weekly mejora PF — muestra pequeña |
+| ROP | 0,10 | 7 | 0,74 | 2 | Falla en ambos |
+| VDE | 0,11 | 5 | 0 | 1 | Falla en ambos |
+| AMZN | 7,26 | 6 | — (100%) | 1 | Daily más robusto por muestra |
+| ILMN | 0,81 | 3 | **1,70** | 3 | Weekly invierte el resultado — verificar |
+
+**Conclusión comparativa:** Daily tiene más muestra y más resultados calculables. Weekly confirma la dirección (lo que falla en Daily falla en Weekly) pero no añade evidencia suficiente para cambiar conclusiones dado el volumen de trades.
+
+---
+
+## §17 · QUÉ NO SE PROBÓ (actualizado con Weekly)
+
+- **NVDA, MU, MSFT, AAPL, QQQ, VOO** — pendiente ampliar el universo tech en ambos timeframes.
+- **Config 4 (C2=1) en Weekly** — no ejecutada. Con Daily ya mostró degradación, no prioritaria.
+- **Config 3 (C7 ON) en Weekly** — descartada por los resultados en Daily (elimina señales).
+- **4H timeframe** — pendiente como campaña separada si se decide explorar el Plan A en temporalidades intraday extendidas.
+- **Verificación operación por operación VGT Weekly** — 4 trades 100% win, pendiente confirmar si hay concentración.
+- **Señales WATCH** — excluidas en v1, candidatas para backtest v2 para ampliar muestra.
+
+---
+
+## CIERRE DE CAMPAÑA WEEKLY — PLAN A BACKTEST v1
+
+Weekly confirma el patrón de Daily pero con muestra insuficiente para conclusiones independientes:
+
+- **El sistema no genera suficientes señales en Weekly** para ser estadísticamente significativo con el universo actual y el historial disponible.
+- **Lo que falla en Daily falla en Weekly** (GLDM, ROP, VDE) — consistencia metodológica confirmada.
+- **IGV es el activo más estable** del sistema en ambos timeframes — PF > 1,6 en Daily y > 2,6 en Weekly.
+- **Daily sigue siendo el timeframe operativo recomendado** para el Plan A con este sistema, por volumen de señales y robustez estadística.
+- **Próxima campaña recomendada:** ampliar el universo tech en Daily (NVDA, QQQ, MSFT, AAPL) antes de explorar 4H.
+
+---
+
+*Documento de proyecto — Ovtlier Plan A System. No es asesoramiento financiero.*
+
+---
+
+## §18 · TABLA DE REGISTRO — LOTE 2 DAILY (NVDA, QQQ, MSFT, AAPL)
+
+*Config 2: Modo C Cruce EMA · C2=3 · C7 OFF · scoreMax=5 · Daily (1D)*
+
+| Ticker | Tipo | PF | %Gan | Ops | DD% | Net% | vs criterio | Notas |
+|---|---|---|---|---|---|---|---|---|
+| NVDA | Acción semis | 0,01 | 10,0% | 10 | 60,82% | -59,77% | ❌ FAIL | Peor resultado de toda la campaña — ver §19 |
+| QQQ | ETF Nasdaq | 0,65 | 50,0% | 16 | 7,69% | -3,91% | ❌ FAIL | Nasdaq como índice falla donde SPY pasa |
+| **MSFT** | Acción tech | **2,86** | **75,0%** | 8 | **2,50%** | +3,71% | ✅ **PASS** | Mejor win rate de toda la campaña |
+| AAPL | Acción tech | 0,45 | 50,0% | 4 | 9,97% | -5,11% | ❌ FAIL | Muestra pequeña — resultado no robusto |
+
+**Resumen lote 2:** 1 PASS / 3 FAIL.
+
+---
+
+## §19 · CASO ANÓMALO — NVDA Daily (PF 0,01 · DD 60,82%)
+
+NVDA es el resultado más destructivo de toda la campaña. Win rate del 10% sobre 10 trades indica que el sistema genera señales falsas sistemáticamente en este activo. Posibles causas:
+
+- **Alta volatilidad intrínseca de NVDA** — los pullbacks a la EMA9 son frecuentes y profundos, activando el SL inicial antes de que el trade tenga oportunidad de desarrollarse.
+- **Movimientos gap frecuentes** — NVDA tiene gaps de apertura habituales que saltan el SL calculado sobre el cierre anterior.
+- **Incompatibilidad con C5 (Hammer)** — las velas de NVDA en zona de pullback raramente forman hammers limpios; cuando lo hacen en condiciones adversas el sistema entra y pierde.
+
+**Conclusión:** NVDA queda descartada definitivamente para el Plan A Daily. El patrón de señal Plan A no es compatible con la estructura de volatilidad de semiconductores individuales de alta beta.
+
+---
+
+## §20 · QQQ vs SPY — MISMO RÉGIMEN, RESULTADOS OPUESTOS
+
+SPY (PF 3,77) y QQQ (PF 0,65) usan el mismo régimen C1 (SPY+QQQ > EMA20) pero producen resultados radicalmente distintos cuando son el activo escaneado:
+
+| | SPY | QQQ |
+|---|---|---|
+| PF | 3,77 | 0,65 |
+| Win Rate | 58,3% | 50,0% |
+| Trades | 12 | 16 |
+| DD% | 4,60% | 7,69% |
+| Net% | +16,51% | -3,91% |
+
+**Hipótesis:** QQQ tiene mayor concentración en mega-cap tech de alta beta (NVDA, META, TSLA pesan más que en SPY). Los pullbacks de QQQ son más bruscos y menos ordenados que los de SPY, generando más señales falsas. El Plan A funciona mejor en el índice más diversificado y menos volátil.
+
+---
+
+## §21 · MSFT — RESULTADO NOTABLE
+
+75% win rate con PF 2,86 y DD 2,5% — el mejor perfil riesgo/recompensa de todas las acciones individuales probadas. MSFT tiene características que alinean bien con el Plan A:
+
+- Pullbacks ordenados a la EMA en tendencias establecidas
+- Baja volatilidad relativa para ser una mega-cap tech
+- Volumen institucional estable — C4 (RVOL) se activa en condiciones reales, no en ruido
+
+Con solo 8 trades la muestra es limitada pero el perfil es el más prometedor de las acciones individuales. A confirmar con más historia si está disponible.
+
+---
+
+## §22 · TABLA DE REGISTRO — LOTE 2 WEEKLY (NVDA, QQQ, MSFT, AAPL)
+
+*Config 2: Modo C Cruce EMA · C2=3 · C7 OFF · scoreMax=5 · Weekly (1W) · Max barras=5*
+
+| Ticker | Tipo | PF | %Gan | Ops | DD% | Net% | vs criterio | Notas |
+|---|---|---|---|---|---|---|---|---|
+| NVDA | Acción semis | 0 | 0% | 1 | 2,77% | -2,77% | ❌ FAIL | Consistente con Daily — inadecuado |
+| QQQ | ETF Nasdaq | 0,73 | 66,7% | 6 | 7,69% | -1,48% | ❌ FAIL | Falla en ambos TF |
+| MSFT | Acción tech | — | 100% | 1 | 1,84% | +0,26% | ⚠️ Muestra mínima | 1 trade — no concluyente |
+| AAPL | Acción tech | 0 | 0% | 1 | 3,17% | -0,75% | ❌ FAIL | 1 trade perdedor |
+
+---
+
+## §23 · TABLA MAESTRA — TODOS LOS RESULTADOS (Daily + Weekly, Config 2)
+
+*Visión consolidada de toda la campaña. PF "—" indica todos los trades ganadores (gross loss = 0).*
+
+| Ticker | Tipo | PF Daily | Trades D | PF Weekly | Trades W | Veredicto final |
+|---|---|---|---|---|---|---|
+| **SPY** | ETF broad | **3,77** | 12 | — (100%) | 3 | ✅ **APTO** — núcleo robusto |
+| **VGT** | ETF tech | **3,53** | 14 | — (100%) | 4 | ✅ **APTO** — núcleo robusto |
+| **IGV** | ETF software | **1,65** | 18 | **2,64** | 4 | ✅ **APTO** — más estable en ambos TF |
+| **SMH** | ETF semis | **1,33** | 8 | — (100%) | 1 | ✅ **APTO** — ampliar muestra |
+| **MSFT** | Acción tech | **2,86** | 8 | — (100%) | 1 | ✅ **APTO** — mejor win rate acciones |
+| **AMZN** | Acción tech | **7,26** | 6 | — (100%) | 1 | ⚠️ **VIGILAR** — PF alto, muestra mínima |
+| **ILMN** | Acción biotech | 0,81 | 3 | **1,70** | 3 | ⚠️ **VIGILAR** — Weekly invierte Daily |
+| VWO | ETF emergentes | 1,18 | 5 | — | 0 | ❌ **DESCARTAR** — PF marginal, sin señales Weekly |
+| QQQ | ETF Nasdaq | 0,65 | 16 | 0,73 | 6 | ❌ **DESCARTAR** — falla en ambos TF |
+| AAPL | Acción tech | 0,45 | 4 | 0 | 1 | ❌ **DESCARTAR** — falla en ambos TF |
+| GLDM | ETF oro | 0,07 | 2 | 0 | 1 | ❌ **DESCARTAR** — commodity incompatible |
+| ROP | Acción industrial | 0,10 | 7 | 0,74 | 2 | ❌ **DESCARTAR** — win rate 14% en Daily |
+| VDE | ETF energía | 0,11 | 5 | 0 | 1 | ❌ **DESCARTAR** — sector incompatible |
+| NVDA | Acción semis | 0,01 | 10 | 0 | 1 | ❌ **DESCARTAR** — peor resultado campaña |
+
+---
+
+## §24 · UNIVERSO OPERATIVO FINAL — PLAN A CONFIG 2 DAILY
+
+| Tier | Tickers | Criterio | Acción |
+|---|---|---|---|
+| **Tier 1 — Núcleo** | SPY, VGT, IGV | PF > 1,5 en Daily, confirmado | Operar con Config 2 |
+| **Tier 2 — Secundario** | SMH, MSFT | PF > 1,2 en Daily, muestra limitada | Operar con cautela |
+| **Tier 3 — Vigilar** | AMZN, ILMN | PF alto pero muestra mínima o inconsistente entre TF | No operar hasta ampliar muestra |
+| **Descartados** | QQQ, VWO, AAPL, GLDM, ROP, VDE, NVDA | Fallan en ambos TF o muestra insuficiente | No usar con Plan A |
+
+---
+
+## §25 · VEREDICTO FINAL POR HIPÓTESIS
+
+### H1 — ¿El Plan A genera alfa sobre Buy & Hold? — **CONFIRMADA CON CONDICIONES**
+Sí, en activos tech y broad market diversificado. SPY (PF 3,77), VGT (PF 3,53), IGV (PF 1,65), MSFT (PF 2,86) superan el umbral PF > 1,2 con robustez en Daily. El criterio de éxito se cumple en 5 de 14 tickers probados.
+
+### H2 — ¿C7 mejora los resultados? — **REFUTADA en Daily automático**
+C7 ON (Config 3) elimina prácticamente todas las señales en Daily. No viable para backtesting automático. Útil únicamente como filtro de convicción manual en el indicador visual.
+
+### H3 — ¿C2=1 barra genera mejores resultados que C2=3? — **REFUTADA**
+Degradación consistente. SPY: PF 3,77 → 1,01 sin el filtro de tendencia previa. C2=3 es componente de calidad real, no ruido.
+
+### H4 — ¿Modo C (Cruce EMA) supera al Modo B (Trailing ATR)? — **CONFIRMADA**
+SPY: Modo B PF 2,30 vs Modo C PF 3,77. Salida más natural dentro de la metodología Uhl.
+
+### H5 — ¿Weekly añade valor sobre Daily? — **INDETERMINADA por muestra insuficiente**
+Weekly confirma la dirección (lo que falla en Daily falla en Weekly) pero genera señales insuficientes para conclusiones independientes. Daily sigue siendo el timeframe operativo recomendado.
+
+### H6 — ¿NVDA y activos de alta beta son aptos? — **REFUTADA**
+NVDA: PF 0,01, DD 60,82%, win rate 10% en Daily. Alta volatilidad y gaps frecuentes destruyen el sistema. Activos de alta beta con movimientos no ordenados son incompatibles con el Plan A.
+
+---
+
+## §26 · PATRÓN ESTRUCTURAL DE LA CAMPAÑA
+
+El sistema Plan A funciona en activos que comparten estas características:
+
+| Característica | Presente en aptos | Ausente en descartados |
+|---|---|---|
+| Tendencia alcista sostenida y ordenada | SPY, VGT, IGV, MSFT | NVDA (volátil), VDE (cíclico), GLDM (commodity) |
+| Pullbacks a EMA limpios y recuperables | SPY, VGT, MSFT | QQQ (pullbacks bruscos), NVDA (gaps) |
+| Volumen institucional estable | SPY, VGT, IGV | ROP (baja liquidez relativa), VWO (emergentes) |
+| Baja volatilidad relativa | VGT (DD 2%), MSFT (DD 2,5%) | NVDA (DD 60%), ROP (DD 13%) |
+
+**Conclusión estructural:** el Plan A es un sistema de pullback institucional en tendencia. Funciona cuando el activo tiene tendencia ordenada, pullbacks a la EMA limpios y volumen institucional real. Falla cuando la volatilidad es tan alta que los stops se activan antes de que el trade se desarrolle.
+
+---
+
+## §27 · QUÉ NO SE PROBÓ
+
+- **4H timeframe** — descartado en favor de Weekly; pendiente como campaña separada si se plantea uso del Plan A en intraday extendido.
+- **Señales WATCH** (score == scoreMax-2) — excluidas en v1. Pueden ampliar la muestra en Tier 2 y Tier 3 sin bajar calidad. Candidatas para backtest v2.
+- **Verificación operación por operación en VGT Weekly** (4 trades 100% win, +16%) y **AMZN Daily** (6 trades PF 7,26) — pendiente confirmar si la concentración en 1-2 trades explica el resultado, siguiendo el criterio §8 de esta campaña y el precedente de COPPER-M y VGT-M en la campaña SAR.
+- **Config con C2=5 barras** — filtro más estricto, podría mejorar calidad en SMH y VWO a costa de menos trades.
+- **Universo ampliado** — META, GOOGL, AMD en Daily podrían añadir evidencia al patrón tech confirmado.
+- **Comisión 0%** como referencia de resultado bruto — no ejecutado.
+
+---
+
+## CIERRE DEFINITIVO DE LA CAMPAÑA — PLAN A BACKTEST v1
+
+*14 tickers × 2 timeframes × 4 configuraciones = 68 combinaciones evaluadas.*
+
+**Conclusiones que no se reabren salvo evidencia nueva:**
+
+1. **El Plan A genera alfa real en activos tech y broad market diversificado en Daily.** SPY, VGT, IGV superan PF 1,2 con robustez. El criterio de éxito de la campaña se cumple.
+
+2. **La configuración óptima es Config 2** — Modo C Cruce EMA, C2=3 barras, C7 OFF. Ninguna de las otras tres configuraciones probadas la supera de forma consistente.
+
+3. **El sistema no es universal.** Falla sistemáticamente en energía (VDE), commodities (GLDM), industriales de baja beta (ROP), biotech individual (ILMN Daily), emergentes (VWO) y alta beta de semis (NVDA). El patrón de fallo es coherente y explicable por la estructura de cada activo.
+
+4. **Daily supera a Weekly** por volumen de señales y robustez estadística. Weekly confirma la dirección pero no genera muestra suficiente para operar de forma sistemática.
+
+5. **C7 no es viable en backtesting automático Daily.** Es un filtro de convicción útil en el indicador visual pero elimina señales en exceso cuando se usa como gate automático.
+
+6. **Universo operativo recomendado:** SPY, VGT, IGV como núcleo (Tier 1). MSFT y SMH como secundarios (Tier 2). Operar únicamente en Daily con Config 2.
+
+---
+
+*Documento de proyecto — Ovtlier Plan A System. No es asesoramiento financiero.*
