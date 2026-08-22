@@ -267,7 +267,25 @@ plot(exitMode == "D - Crossunder EMA configurable" and strategy.position_size > 
 // ─── DASHBOARD — paleta clara, sin gate barstate (Bar Replay) ─
 // Tabla 2 columnas x 12 filas — actualizada cada barra sin gate.
 
-var table dash = table.new(position.top_right, 2, 13,
+// Posicion de la tabla — configurable desde inputs
+tablePosInput = input.string("Top Right", "Posicion tabla",
+     options = ["Top Right", "Top Left", "Top Center",
+                "Bottom Right", "Bottom Left", "Bottom Center",
+                "Middle Right", "Middle Left"],
+     group = "🎨 Visual")
+
+tablePos = switch tablePosInput
+    "Top Right"     => position.top_right
+    "Top Left"      => position.top_left
+    "Top Center"    => position.top_center
+    "Bottom Right"  => position.bottom_right
+    "Bottom Left"   => position.bottom_left
+    "Bottom Center" => position.bottom_center
+    "Middle Right"  => position.middle_right
+    "Middle Left"   => position.middle_left
+    => position.top_right
+
+var table dash = table.new(tablePos, 2, 13,
      bgcolor      = color.white,
      border_width = 1,
      border_color = color.new(color.gray, 40),
