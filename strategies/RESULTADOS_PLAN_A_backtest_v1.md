@@ -606,3 +606,176 @@ Una sola operación (dic 2013, rally post-earnings de ILMN) explica el 55,7% del
 
 **Lección metodológica:** verificar siempre el CSV completo antes de clasificar un resultado como válido. El dashboard del Strategy Tester muestra resultados sobre el período visible en pantalla — si el gráfico no está en vista máxima de historial, los datos son parciales. Esta verificación pasa a ser paso obligatorio del protocolo de campaña para todas las pruebas futuras.
 
+
+---
+
+## §29 · AUDITORÍA CSV COMPLETA — TIER 1/2
+
+*Mismo protocolo que §28. Historial máximo exportado del Strategy Tester.*
+*Umbral de concentración: > 50% del beneficio bruto en 1 operación → DESCARTADO.*
+*Fuente: CSV exportados 21 ago 2026.*
+
+---
+
+### SPY Daily — ⚠️ ALERTA DE CONCENTRACIÓN
+
+| Trade | Fecha salida | PnL USD | PnL % |
+|---|---|---|---|
+| 1 | 2018-06-20 | +$1.734 | +0,17% |
+| 2 | 2018-09-10 | +$5.043 | +0,51% |
+| **3** | **2021-08-20** | **+$8.016** | **+0,80%** |
+| 4 | 2025-08-04 | -$2.059 | -0,20% |
+
+| Métrica | Dashboard previo | CSV completo |
+|---|---|---|
+| Trades | 12 | **4** |
+| Win Rate | 58,3% | **75,0%** |
+| PF | 3,77 | **7,19** |
+| Net | +16,51% | **+1,28%** |
+
+**Discrepancia explicada:** el historial disponible de SPY en este feed de TradingView solo cubre desde 2018 aproximadamente. Los 12 trades del dashboard previo procedían de un período de visualización distinto o de un feed con más historial. El CSV exportado ahora recoge solo 4 trades desde 2018.
+
+**Concentración:** Trade 3 (ago 2021) = **54,2% del beneficio bruto** — supera el umbral del 50%.
+
+**Veredicto: INDETERMINADO — muestra insuficiente**
+4 trades no permiten ninguna conclusión estadística. El sistema no ha generado suficientes señales en el historial disponible en este feed para validar o descartar SPY. No se promueve ni se descarta — se marca como pendiente de verificación con feed de mayor historial (ej. datos ajustados desde 1993 si están disponibles en la cuenta de TradingView).
+
+---
+
+### VGT Daily — CONFIRMADO TIER 1
+
+| Trade | Fecha salida | PnL USD | PnL % |
+|---|---|---|---|
+| 1 | 2016-06-14 | -$9.018 | -0,91% |
+| **2** | **2016-09-13** | **+$15.453** | **+1,57%** |
+| 3 | 2017-06-13 | +$7.484 | +0,75% |
+| 4 | 2017-12-28 | +$2.672 | +0,26% |
+| 5 | 2019-05-03 | -$3.438 | -0,34% |
+| 6 | 2021-01-06 | -$4.388 | -0,43% |
+| 7 | 2021-08-18 | +$1.015 | +0,10% |
+| 8 | 2023-04-12 | +$8.785 | +0,88% |
+
+| Métrica | Dashboard previo | CSV completo |
+|---|---|---|
+| Trades | 14 | **8** |
+| Win Rate | 57,1% | **62,5%** |
+| PF | 3,53 | **2,10** |
+| Net | +7,46% | **+1,88%** |
+
+**Concentración:** Trade 2 (sep 2016) = **43,6% del bruto** — por debajo del umbral del 50%.
+
+**Veredicto: CONFIRMADO — baja concentración, resultado positivo**
+PF 2,10 real, sin concentración excesiva, beneficio bien distribuido entre 5 operaciones ganadoras. La reducción respecto al dashboard (PF 3,53 → 2,10) es material pero el resultado sigue siendo positivo y superando el umbral 1,2. **VGT Daily se mantiene en Tier 1** con PF corregido a 2,10.
+
+---
+
+### IGV Daily — DESCARTADO POR CONCENTRACIÓN + RESULTADO NEGATIVO
+
+| Trade | Fecha salida | PnL USD | PnL % |
+|---|---|---|---|
+| 1 | 2006-10-23 | -$6.780 | -0,68% |
+| 2 | 2013-10-01 | -$3.653 | -0,37% |
+| 3 | 2017-06-13 | +$9.628 | +0,98% |
+| 4 | 2017-08-11 | -$18.183 | -1,83% |
+| **5** | **2017-11-03** | **+$42.892** | **+4,37%** |
+| 6 | 2018-03-21 | +$2.177 | +0,21% |
+| 7 | 2018-09-07 | -$1.552 | -0,15% |
+| 8 | 2020-02-24 | -$59.778 | **-5,86%** |
+| 9 | 2020-09-09 | +$15.237 | +1,63% |
+| 10 | 2024-01-04 | -$6.182 | -0,64% |
+
+| Métrica | Dashboard previo | CSV completo |
+|---|---|---|
+| Trades | 18 | **10** |
+| Win Rate | 50,0% | **40,0%** |
+| PF | 1,65 | **0,73** |
+| Net | +7,91% | **-2,34%** |
+
+**Concentración:** Trade 5 (nov 2017) = **61,3% del bruto ganador** — supera el umbral del 50%.
+**Trade 8 (feb 2020):** -$59.778 en una sola operación — el crash COVID destruye el sistema.
+
+**Veredicto: DESCARTADO — net negativo + concentración 61,3%**
+El beneficio real es -2,34%. Una sola operación (nov 2017, rally post-earnings sector software) explica el 61,3% del beneficio bruto, y el crash de febrero 2020 genera una pérdida individual de -$59.778 que el sistema no puede compensar. IGV falla la auditoría en ambos criterios. **Eliminado del universo operativo.**
+
+---
+
+### MSFT Daily — CONFIRMADO TIER 2
+
+| Trade | Fecha salida | PnL USD | PnL % |
+|---|---|---|---|
+| 1 | 2004-11-24 | +$1.742 | +0,17% |
+| **2** | **2009-10-05** | **+$19.129** | **+1,94%** |
+| 3 | 2012-08-31 | +$10.019 | +0,98% |
+| 4 | 2017-06-13 | +$9.992 | +0,98% |
+| 5 | 2021-05-03 | +$13.963 | +1,36% |
+| 6 | 2021-09-09 | +$2.531 | +0,24% |
+
+| Métrica | Dashboard previo | CSV completo |
+|---|---|---|
+| Trades | 8 | **6** |
+| Win Rate | 75,0% | **100,0%** |
+| PF | 2,86 | **∞ (sin perdedores)** |
+| Net | +3,71% | **+5,67%** |
+
+**Concentración:** Trade 2 (oct 2009) = **33,3% del bruto** — bien por debajo del umbral.
+Top 2 trades = 57,6% — aceptable con 6 operaciones.
+
+**Veredicto: CONFIRMADO — resultado mejor que el dashboard**
+100% win rate sobre 6 trades con historial completo, sin perdedores registrados, beneficio bien distribuido. La operación mayor (33,3%) no genera concentración excesiva. **MSFT Daily se mantiene en Tier 2** con resultado reforzado. Caveat: 6 trades en ~22 años sigue siendo muestra estadísticamente limitada.
+
+---
+
+### SMH Daily — CONFIRMADO TIER 2
+
+| Trade | Fecha salida | PnL USD | PnL % |
+|---|---|---|---|
+| **1** | **2005-12-19** | **+$24.220** | **+2,43%** |
+| **2** | **2006-01-19** | **+$28.303** | **+2,84%** |
+| 3 | 2012-04-09 | -$9.587 | -0,91% |
+| **4** | **2014-07-11** | **+$36.186** | **+3,47%** |
+| 5 | 2018-09-10 | +$5.458 | +0,51% |
+| 6 | 2019-04-30 | -$3.249 | -0,30% |
+| 7 | 2025-07-24 | +$5.943 | +0,55% |
+
+| Métrica | Dashboard previo | CSV completo |
+|---|---|---|
+| Trades | 8 | **7** |
+| Win Rate | 50,0% | **71,4%** |
+| PF | 1,33 | **7,80** |
+| Net | +1,72% | **+8,59%** |
+
+**Concentración:** Trade 4 (jul 2014) = **36,1% del bruto** — por debajo del umbral.
+Top 2 trades = 64,4% — dentro de rango aceptable para 5 ganadores.
+
+**Veredicto: CONFIRMADO — resultado significativamente mejor que el dashboard**
+PF real 7,80 vs 1,33 en dashboard. Beneficio distribuido entre 5 operaciones ganadoras, ninguna supera el 40% del bruto. **SMH Daily asciende a Tier 1** por PF real 7,80 y win rate 71,4%.
+
+---
+
+### Resumen auditoría §29 — Tier 1/2
+
+| Ticker | PF Dashboard | PF CSV real | Concentración | Veredicto | Tier final |
+|---|---|---|---|---|---|
+| SPY | 3,77 | 7,19 (4 trades) | 54,2% ⚠️ | INDETERMINADO — muestra insuficiente | ⏳ Pendiente |
+| VGT | 3,53 | **2,10** | 43,6% ✅ | CONFIRMADO | ✅ **Tier 1** |
+| IGV | 1,65 | **−0,73** | 61,3% ❌ | DESCARTADO | ❌ Eliminado |
+| MSFT | 2,86 | **∞ (5,67%)** | 33,3% ✅ | CONFIRMADO | ✅ **Tier 2** |
+| SMH | 1,33 | **7,80** | 36,1% ✅ | CONFIRMADO — asciende | ✅ **Tier 1** |
+
+---
+
+### Universo operativo final — post auditoría completa (§28 + §29)
+
+| Tier | Ticker | PF real CSV | Win% real | Trades | Estado |
+|---|---|---|---|---|---|
+| **Tier 1** | VGT Daily | 2,10 | 62,5% | 8 | ✅ Confirmado |
+| **Tier 1** | SMH Daily | 7,80 | 71,4% | 7 | ✅ Confirmado — ascendido |
+| **Tier 2** | MSFT Daily | ∞ | 100,0% | 6 | ✅ Confirmado — muestra pequeña |
+| **⏳ Pendiente** | SPY Daily | 7,19 | 75,0% | 4 | Indeterminado — historial insuficiente |
+| ❌ Eliminado | IGV Daily | 0,73 | 40,0% | 10 | Descartado — net negativo + concentración |
+| ❌ Eliminado | AMZN Daily | <1 | — | 18 | Descartado §28 |
+| ❌ Eliminado | VGT Weekly | ~1,02 | 46,2% | 39 | Descartado §28 |
+| ❌ Eliminado | ILMN Weekly | <1 | — | 13 | Descartado §28 — concentración 55,7% |
+
+**Nota SPY:** para resolver el estado Pendiente se necesita un feed con historial desde 1993 en TradingView (datos ajustados por dividendos disponibles en plan Premium+). Con 4 trades desde 2018 no hay base estadística suficiente para ninguna conclusión.
+
