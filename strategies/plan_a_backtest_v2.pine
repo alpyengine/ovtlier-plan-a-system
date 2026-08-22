@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-// © Ovtlier University | Plan A Backtest v2
+// © Ovtlier University | Plan A Backtest v2.1
 // Basado en la metodología de Christopher Uhl
 // Temporalidades: Daily (D) y Weekly (W)
 //
@@ -18,7 +18,7 @@
 // CRITERIO: Profit Factor > 1,2x sobre Buy & Hold
 // ═══════════════════════════════════════════════════════════════
 //@version=6
-strategy("Ovtlier Plan A - Backtest v2",
+strategy("Ovtlier Plan A - Backtest v2.1",
      overlay             = true,
      pyramiding          = 0,
      default_qty_type    = strategy.percent_of_equity,
@@ -50,6 +50,10 @@ c6Required  = input.bool(false, "C6 obligatoria",          group = "📊 Técnic
 useC7       = input.bool(true,  "Activar C7 Divergencia",  group = "📊 Técnicos")
 c7Lookback  = input.int(5,     "C7 Ventana barras",        group = "📊 Técnicos", minval = 2, maxval = 20)
 c7Required  = input.bool(false, "C7 obligatoria",          group = "📊 Técnicos")
+c4Required  = input.bool(true,  "C4 RVOL obligatoria",      group = "📊 Técnicos",
+     tooltip = "ON (default): RVOL elevado es obligatorio para entrar — filtra tendencias de bajo volumen.\nOFF: C4 suma al score pero no bloquea la entrada — permite entradas en tendencias suaves sin pico de volumen.")
+minScore    = input.int(4,     "Score minimo entrada",      group = "📊 Técnicos", minval = 1, maxval = 7,
+     tooltip = "READY clasico = scoreMax-1 (ej. 4/5).\nReducir a scoreMax-2 (ej. 3/5) incluye seniales WATCH y genera mas entradas.\nSubir a scoreMax aumenta la exigencia.")
 atrLen      = input.int(14,    "ATR Longitud",             group = "📊 Técnicos", minval = 1)
 atrSlMult   = input.float(1.5, "ATR Stop-Loss inicial x",  group = "📊 Técnicos", minval = 0.5, step = 0.1)
 
@@ -150,7 +154,10 @@ float priorRsi = ta.lowest(rsiDiv[1], c7Lookback)
 bool  c7raw    = low < priorLow and rsiDiv > priorRsi
 bool  c7       = useC7 and c7raw
 
-// ─── SCORING — idéntico al indicador v5.2 ────────────────────
+// SCORING
+// c4Gate: cuando c4Required=ON, RVOL es obligatorio (bloquea si falla).
+// cuando c4Required=OFF, C4 solo suma al score sin bloquear.
+bool c4Gate  = c4Required ? c4 : true
 bool c6Gate  = c6Required ? c6 : true
 bool c7Gate  = not useC7 or not c7Required or c7
 
@@ -160,8 +167,10 @@ int scoreS   = (useSuperTF and not superTFRequired and c1_superTF) ? 1 : 0
 int scoreC7  = (useC7 and not c7Required and c7) ? 1 : 0
 int score    = scoreB + scoreS + scoreC7
 
-// Solo señal READY (score >= scoreMax-1) — decisión de diseño backtest/v1
-bool entrySignal = c1_regime and superTFGate and c6Gate and c7Gate and score >= (scoreMax - 1)
+// Senial de entrada: regimen + gates + score >= minScore configurable.
+// minScore default=4 reproduce READY clasico (scoreMax-1 con scoreMax=5).
+// Reducir minScore a 3 incluye seniales WATCH — mas entradas, menor exigencia.
+bool entrySignal = c1_regime and superTFGate and c4Gate and c6Gate and c7Gate and score >= minScore
 
 // ─── ATR PARA STOP INICIAL Y TRAILING ────────────────────────
 float atrVal      = ta.atr(atrLen)
