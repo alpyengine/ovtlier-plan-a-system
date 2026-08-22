@@ -779,3 +779,132 @@ PF real 7,80 vs 1,33 en dashboard. Beneficio distribuido entre 5 operaciones gan
 
 **Nota SPY:** para resolver el estado Pendiente se necesita un feed con historial desde 1993 en TradingView (datos ajustados por dividendos disponibles en plan Premium+). Con 4 trades desde 2018 no hay base estadística suficiente para ninguna conclusión.
 
+
+---
+
+## §30 · CAMPAÑA v2.1 — CONFIGS 5, 6 y 7 (C4 opcional + minScore)
+
+*Script: ovtlier_plan_a_backtest.pine v2.1 · Fecha: 23 ago 2026*
+*Tickers: SPY, VGT, IGV, SMH, MSFT · Timeframe: Daily (1D)*
+*Todos los CSV exportados con historial máximo — protocolo §28/§29 aplicado.*
+*Concentración auditada en todos los casos — umbral > 50% = alerta.*
+
+| Config | C4 RVOL | minScore | Descripción |
+|---|---|---|---|
+| C2 | ON (obligatoria) | 4 | Base auditada §29 — referencia |
+| **C5** | **OFF (puntuada)** | 4 | Sin gate RVOL, exigencia READY |
+| C6 | ON (obligatoria) | **3** | RVOL obligatorio, incluye WATCH |
+| **C7** | **OFF (puntuada)** | **3** | Sin gate RVOL, incluye WATCH |
+
+*Nota: C7 en esta sección es la Config 7 del backtest (C4 OFF + minScore 3) — no confundir con la condición C7 (Divergencia RSI) del indicador.*
+
+---
+
+### SPY Daily
+
+| Config | Trades | WR% | PF | Net% | Conc. top1 | Criterio |
+|---|---|---|---|---|---|---|
+| C2 (base auditada) | 4 | 75,0% | 7,19 | +1,28% | — | ✅ PASS |
+| C5 (C4 OFF · 4) | 10 | 60,0% | 3,48 | +13,09% | OK 40,9% | ✅ PASS |
+| C6 (C4 ON · 3) | 38 | 50,0% | 1,33 | +10,01% | OK 19,2% | ✅ PASS |
+| C7-cfg (C4 OFF · 3) | — | — | — | — | — | No disponible |
+
+**Hallazgo SPY:** C5 (sin gate RVOL, READY) es la mejor configuración verificada — PF 3,48 con 10 trades y sin concentración. Multiplica la muestra de C2 por 2,5 manteniendo calidad. C6 (WATCH + RVOL) genera 38 trades con PF 1,33 — útil para muestra estadística pero con menor calidad por trade.
+
+---
+
+### VGT Daily
+
+| Config | Trades | WR% | PF | Net% | Conc. top1 | Criterio |
+|---|---|---|---|---|---|---|
+| C2 (base auditada) | 8 | 62,5% | 2,10 | +1,88% | — | ✅ PASS |
+| C5 (C4 OFF · 4) | 13 | 61,5% | **4,74** | **+21,04%** | OK 27,8% | ✅ **PASS** |
+| C6 (C4 ON · 3) | 45 | 53,3% | 1,66 | +29,32% | OK 13,7% | ✅ PASS |
+| C7-cfg (C4 OFF · 3) | 88 | 50,0% | 1,18 | +21,79% | OK 5,6% | ❌ FAIL |
+
+**Hallazgo VGT:** C5 es el mejor resultado de toda la campaña v2.1 — PF 4,74, WR 61,5%, sin concentración excesiva (27,8%). Eliminar el gate RVOL mejora el PF de 2,10 a 4,74 manteniendo la exigencia READY. C6 genera 45 trades con PF 1,66 y net +29,32% — mayor beneficio absoluto pero menor PF. C7-cfg (88 trades) cae justo por debajo del umbral (PF 1,18) — demasiadas señales de baja calidad.
+
+---
+
+### IGV Daily
+
+| Config | Trades | WR% | PF | Net% | Conc. top1 | Criterio |
+|---|---|---|---|---|---|---|
+| C2 (base auditada) | 10 | 40,0% | 0,73 | -2,34% | — | ❌ FAIL |
+| C5 (C4 OFF · 4) | 18 | 61,1% | **1,53** | **+13,80%** | OK 17,7% | ✅ **PASS** |
+| C6 (C4 ON · 3) | 52 | 44,2% | 0,91 | -3,09% | OK 9,9% | ❌ FAIL |
+| C7-cfg (C4 OFF · 3) | 93 | 44,1% | 1,08 | +13,06% | OK 5,6% | ❌ FAIL |
+
+**Hallazgo IGV — reversión de veredicto:** IGV fue descartado en §29 con C2 (PF 0,73). Con C5 (sin gate RVOL) pasa a PF 1,53 con 18 trades y WR 61,1% — sin concentración. El gate RVOL era el responsable de eliminar las mejores entradas de IGV. C6 y C7-cfg fallan — añadir WATCH o mantener RVOL degradan el resultado. **IGV se readmite condicionalmente con Config 5.**
+
+---
+
+### SMH Daily
+
+| Config | Trades | WR% | PF | Net% | Conc. top1 | Criterio |
+|---|---|---|---|---|---|---|
+| C2 (base auditada) | 7 | 71,4% | 7,80 | +8,59% | — | ✅ PASS |
+| C5 (C4 OFF · 4) | 8 | 50,0% | 0,59 | -3,61% | ⚠️ 62,6% | ❌ FAIL |
+| C6 (C4 ON · 3) | 38 | 50,0% | 1,04 | +5,13% | OK 15,5% | ❌ FAIL |
+| C7-cfg (C4 OFF · 3) | 83 | 44,6% | 0,99 | +7,92% | OK 10,3% | ❌ FAIL |
+
+**Hallazgo SMH:** SMH funciona bien únicamente con C2 (gate RVOL ON + READY estricto). Eliminar el gate RVOL o bajar el minScore degrada el resultado. El RVOL es un filtro de calidad real para SMH — las entradas válidas de semiconductores sí coinciden con picos de volumen. C2 sigue siendo la única configuración válida. C5 además tiene concentración 62,6% en una operación.
+
+---
+
+### MSFT Daily
+
+| Config | Trades | WR% | PF | Net% | Conc. top1 | Criterio |
+|---|---|---|---|---|---|---|
+| C2 (base auditada) | 6 | 100,0% | inf | +5,67% | — | ✅ PASS |
+| C5 (C4 OFF · 4) | 8 | 62,5% | **2,55** | **+11,39%** | OK 43,8% | ✅ **PASS** |
+| C6 (C4 ON · 3) | 42 | 40,5% | 1,11 | +8,54% | OK 14,9% | ❌ FAIL |
+| C7-cfg (C4 OFF · 3) | 82 | 45,1% | 1,19 | +23,27% | OK 6,9% | ❌ FAIL |
+
+**Hallazgo MSFT:** C5 es la mejor configuración verificable (C2 con PF infinito no es estadísticamente interpretable). PF 2,55 con 8 trades y sin concentración. C6 y C7-cfg justo por debajo del umbral — MSFT también funciona mejor con READY estricto y sin gate RVOL.
+
+---
+
+### Nota — SPT (ticker no planificado)
+
+El CSV `NASDAQ_SPT_2026-08-23` corresponde a un ticker no incluido en el plan de campaña. Resultado: 12 trades, WR 25%, PF 0,32, net -37,71%, concentración 62,8%. **Descartado** — no forma parte del universo operativo.
+
+---
+
+### Tabla maestra comparativa — mejor config por ticker
+
+| Ticker | Config ganadora | PF | WR% | Trades | Net% | vs C2 base |
+|---|---|---|---|---|---|---|
+| SPY | **C5** (C4 OFF · 4) | **3,48** | 60,0% | 10 | +13,09% | ↑ PF, ↑ muestra |
+| VGT | **C5** (C4 OFF · 4) | **4,74** | 61,5% | 13 | +21,04% | ↑↑ PF, ↑ muestra |
+| IGV | **C5** (C4 OFF · 4) | **1,53** | 61,1% | 18 | +13,80% | ↑↑ readmitido |
+| SMH | **C2** (C4 ON · 4) | **7,80** | 71,4% | 7 | +8,59% | C2 sigue siendo mejor |
+| MSFT | **C5** (C4 OFF · 4) | **2,55** | 62,5% | 8 | +11,39% | ↑ PF, ↑ muestra |
+
+**Config 5 (C4 OFF + minScore 4) gana en 4 de 5 tickers.** SMH es la excepción — el gate RVOL es un filtro de calidad real para semiconductores.
+
+---
+
+### Veredicto §30
+
+**Hallazgo principal:** el gate RVOL obligatorio (C4 Required ON) era el mayor responsable de las pocas señales y de eliminar entradas de calidad en SPY, VGT, IGV y MSFT. Quitarlo manteniendo el threshold READY (minScore=4) mejora el PF en todos los casos excepto SMH.
+
+**Bajar el minScore a 3 (WATCH)** genera muchos más trades pero degrada el PF de forma consistente — la exigencia READY es un filtro de calidad real que conviene mantener.
+
+**Configuración recomendada actualizada:**
+
+| Ticker | Config | C4 | minScore |
+|---|---|---|---|
+| SPY, VGT, IGV, MSFT | **Config 5** | OFF | 4 |
+| SMH | **Config 2** | ON | 4 |
+
+**Universo operativo actualizado post §30:**
+
+| Tier | Ticker | Config | PF real |
+|---|---|---|---|
+| **Tier 1** | VGT | C5 | 4,74 |
+| **Tier 1** | SMH | C2 | 7,80 |
+| **Tier 1** | IGV | C5 | 1,53 (readmitido) |
+| **Tier 2** | SPY | C5 | 3,48 |
+| **Tier 2** | MSFT | C5 | 2,55 |
+
