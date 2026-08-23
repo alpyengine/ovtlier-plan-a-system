@@ -908,3 +908,74 @@ El CSV `NASDAQ_SPT_2026-08-23` corresponde a un ticker no incluido en el plan de
 | **Tier 2** | SPY | C5 | 3,48 |
 | **Tier 2** | MSFT | C5 | 2,55 |
 
+
+---
+
+## §31 · CAMPAÑA 4H — CIERRE DEFINITIVO
+
+*Script: ovtlier_plan_a_backtest.pine v2.1 · Fecha: 23 ago 2026*
+*Config 5: Modo C Cruce EMA · C4 OFF · minScore 4 · MaxBars 6*
+*Tickers: SPY, QQQ, AAPL, MSFT, NVDA · Timeframe: 4H*
+*CSV exportados con historial máximo — protocolo §28/§29 aplicado.*
+
+---
+
+### Resultados
+
+| Ticker | Trades | WR% | PF | Net% | Conc. top1 | Criterio |
+|---|---|---|---|---|---|---|
+| SPY | 55 | 34,5% | 0,47 | -8,81% | OK 14,5% | ❌ FAIL |
+| QQQ | 91 | 34,1% | 0,70 | -10,40% | OK 13,6% | ❌ FAIL |
+| AAPL | 47 | 34,0% | 0,48 | -21,42% | OK 25,0% | ❌ FAIL |
+| MSFT | 37 | 29,7% | 0,87 | -2,71% | OK 31,7% | ❌ FAIL |
+| NVDA | 34 | 41,2% | 0,49 | -22,18% | OK 17,2% | ❌ FAIL |
+
+**0 PASS / 5 FAIL. Sin excepción.**
+
+---
+
+### Diagnóstico — por qué falla en 4H
+
+**1. Win rate estructuralmente bajo (~34%)**
+En Daily el sistema tenía WR 60-75%. En 4H cae a 30-41%. El ruido de las barras de 4H activa C2 (pullback a EMA) con mucha más frecuencia pero en condiciones que no son pullbacks reales — son simplemente oscilaciones intradía dentro de una barra mayor.
+
+**2. La EMA9 en 4H no es soporte institucional**
+En Daily la EMA9 representa ~2 semanas de precio — una zona donde los institucionales realmente defienden posiciones. En 4H la EMA9 son 36 horas — demasiado corta para tener significado como soporte. El precio la cruza y la recupera en la misma sesión sin que haya ningún cambio estructural.
+
+**3. La salida por Cruce EMA es prematura en 4H**
+Lo que observas en el gráfico — entradas tardías y salidas inmediatas — tiene una explicación técnica directa: en 4H el precio puede tocar la EMA, activar la entrada en el cierre de esa barra, y en la siguiente barra de 4H ya estar de vuelta bajo la EMA. El sistema entra y sale en 1-2 barras, capturando exactamente el peor momento del movimiento.
+
+**Señal de salida dominante en 4H:**
+- SPY: 46 de 55 salidas por Cruce EMA (83,6%)
+- QQQ: 61 de 91 salidas por Cruce EMA (67,0%)
+- AAPL: 35 de 47 salidas por Cruce EMA (74,5%)
+
+El Cruce EMA en 4H actúa como salida inmediata porque la EMA9 de 4H es tan reactiva que cualquier corrección mínima la cruza.
+
+**4. Margin calls frecuentes en QQQ y AAPL**
+QQQ tiene 15 margin calls de 91 trades (16,5%). Son entradas donde el precio cae inmediatamente después de la entrada y la posición se liquida antes de que cualquier salida planificada pueda ejecutarse. Indica que las señales de 4H se generan frecuentemente justo antes de caídas bruscas.
+
+---
+
+### Veredicto — Plan A en 4H
+
+**DESCARTADO — el Plan A no es compatible con el timeframe de 4H.**
+
+El sistema fue diseñado para Daily/Weekly donde las EMAs tienen significado como soporte institucional y los pullbacks tardan días en resolverse. En 4H todos los parámetros del sistema — EMA9, C2, Cruce EMA de salida, MaxBars 6 — operan a una escala temporal donde el precio oscila más rápido de lo que el sistema puede reaccionar coherentemente.
+
+Aumentar MaxBars o cambiar la EMA de salida no resolvería el problema estructural — el problema es que el Plan A evalúa condiciones diseñadas para swing (días) en un timeframe intraday extendido (horas).
+
+**No se prueban más configuraciones en 4H.** El criterio de parada del protocolo se aplica: cuando el patrón de fallo es inequívoco en todos los activos probados, no se abren más hipótesis.
+
+---
+
+### Resumen final de la campaña completa Plan A Backtest
+
+| Timeframe | Resultado | Universo operativo |
+|---|---|---|
+| **Daily** | ✅ Sistema válido | VGT/SMH/IGV (Tier 1), SPY/MSFT (Tier 2) con Config 5 |
+| **Weekly** | ⚠️ Muestra insuficiente | IGV único resultado calculable (PF 2,64) |
+| **4H** | ❌ Descartado | 0 de 5 tickers supera umbral |
+
+**Conclusión definitiva:** el Plan A es un sistema de swing Daily. Su ventaja estadística real existe únicamente en ese timeframe con Config 5 (C4 OFF, minScore 4) en activos tech y broad market diversificado.
+
