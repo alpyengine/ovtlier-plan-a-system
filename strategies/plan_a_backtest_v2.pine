@@ -67,7 +67,7 @@ trailAtrMult = input.float(2.0, "B — Trailing ATR multiplicador", group = "�
      tooltip = "Distancia del trailing stop al precio en unidades de ATR.\nDefault 2.0.")
 
 maxBarsHold  = input.int(10,   "Max barras en posicion",   group = "🚪 Salida", minval = 1, maxval = 50,
-     tooltip = "Cierre a mercado si la posicion lleva N barras sin que se active ninguna salida.\nEvita posiciones zombi.")
+     tooltip = "Cierre a mercado si la posicion lleva N barras sin activar ninguna salida.\nEvita posiciones zombi en Modos B y C.\nEn Modo D tiene un rol adicional: cuando la entrada ocurre con close ya bajo la EMA de salida, ta.crossunder no puede dispararse — el MaxBars actua como salida por tiempo en esos casos. Aumentar este valor en Modo D deja correr mas esas posiciones; reducirlo las corta antes.")
 
 exitEmaMode  = input.string("EMA Rapida", "C — Cruce sobre",
      options = ["EMA Rapida", "EMA Lenta"],
