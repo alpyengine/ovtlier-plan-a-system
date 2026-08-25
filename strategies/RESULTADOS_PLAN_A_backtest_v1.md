@@ -3,7 +3,7 @@
 *Última actualización: 21 ago 2026 · Config base: Modo C Cruce EMA · C2=3 barras · C7 OFF · scoreMax=5*
 *Timeframes probados: Daily (1D) · Weekly (1W) · Capital: 1M USD · Comisión: 0,05% · Slippage: 1 tick (~0,05%)*
 
-> **Documentos relacionados:** `ovtlier_plan_a_backtest.pine` (script), `ovtlier_plan_a.pine` (indicador v5.2), `RESULTADOS_SAR_trailing.md` (precedente de protocolo), `RESULTADOS_H1_ATR_trailing.md` (precedente de umbral de éxito).
+> **Documentos relacionados:** `ovtlier_plan_a_backtest.pine` (script), `ovtlier_plan_a.pine` (indicador v5.2), `plan_a_construccion_indicador.md` (racional de diseño — de dónde salen C1-C7), `GUIA_outlier_referencia.md` (filosofía/disciplina del método base), `RESULTADOS_SAR_trailing.md` (precedente de protocolo), `RESULTADOS_H1_ATR_trailing.md` (precedente de umbral de éxito).
 
 ---
 
